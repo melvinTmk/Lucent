@@ -1,0 +1,110 @@
+/* Liquid Glass skin, ported from the validated mockup (docs/mockup-dock-glass.html).
+   The blur itself is the native Acrylic under the webview (the window is clipped to the
+   islands); this file only paints Apple's fill, inner highlights and refracting rim.
+   Nothing here samples what is behind the window. */
+
+:root,
+:root[data-tone="light"] {
+  --glass-fill: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06) 45%, rgba(255, 255, 255, 0.1));
+  /* One soft top highlight: Apple's edge is a glint, not an outline. */
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 14px rgba(255, 255, 255, 0.08);
+  /* Hairline that keeps light glass defined over a light wallpaper (no outer shadow is
+     possible: the window ends at the glass edge). */
+  --glass-edge: inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  /* Refracting rim: brightest where light enters (top-left) and exits (bottom-right). */
+  --rim-hi: rgba(255, 255, 255, 0.45);
+  --rim-mid: rgba(255, 255, 255, 0.04);
+  --rim-lo: rgba(255, 255, 255, 0.14);
+  --lens: rgba(255, 255, 255, 0.14);
+  /* Ink sits on the glass: dark on light glass, white on dark glass (as in macOS 26). */
+  --ink: rgba(22, 22, 26, 0.88);
+  --ink-soft: rgba(22, 22, 26, 0.58);
+  --dot: rgba(22, 22, 26, 0.72);
+  --sep: rgba(22, 22, 26, 0.16);
+  --icon-shadow: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.3));
+}
+
+:root[data-tone="dark"] {
+  --glass-fill: linear-gradient(180deg, rgba(20, 20, 28, 0.35), rgba(20, 20, 28, 0.25));
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --glass-edge: inset 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+  --rim-hi: rgba(255, 255, 255, 0.24);
+  --rim-mid: rgba(255, 255, 255, 0.02);
+  --rim-lo: rgba(255, 255, 255, 0.07);
+  --lens: rgba(255, 255, 255, 0.06);
+  --ink: rgba(255, 255, 255, 0.95);
+  --ink-soft: rgba(255, 255, 255, 0.66);
+  --dot: rgba(255, 255, 255, 0.9);
+  --sep: rgba(255, 255, 255, 0.3);
+  --icon-shadow: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.38));
+}
+
+.island {
+  --radius: 18px;
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--radius);
+  color: var(--ink);
+  transition: color 300ms ease;
+}
+
+/* Fill + Apple's inner highlights (mockup `.glass::after`), plus a soft lens band that
+   brightens the inside of the edge the way a thick glass slab bends light. */
+.island::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    radial-gradient(140% 120% at 50% 50%, transparent 62%, var(--lens) 100%),
+    var(--glass-fill);
+  box-shadow: var(--glass-inset), var(--glass-edge);
+  transition: background 300ms ease, box-shadow 300ms ease;
+  pointer-events: none;
+}
+
+/* Refraction, approximated on the glass's own rim only: a 1 px ring whose brightness is
+   warped around the perimeter (conic gradient), so the edge reads as a lens catching
+   light. Never sampled from behind the window (see docs/decisions.md). */
+.island::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 0.75px;
+  background: conic-gradient(
+    from 225deg at 50% 50%,
+    var(--rim-hi) 0deg,
+    var(--rim-mid) 70deg,
+    var(--rim-lo) 140deg,
+    var(--rim-hi) 180deg,
+    var(--rim-mid) 250deg,
+    var(--rim-lo) 320deg,
+    var(--rim-hi) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Unread badge (mockup `.bdg`); fed by a later milestone. */
+.badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #ff3b30;
+  color: #fff;
+  font: 600 10px/17px var(--font);
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}

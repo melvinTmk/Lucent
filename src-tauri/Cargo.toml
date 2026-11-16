@@ -1,0 +1,94 @@
+[package]
+name = "lucent"
+version = "0.1.0"
+description = "Lucent - macOS-style dock for Windows"
+authors = []
+license = "GPL-3.0-or-later"
+readme = "../README.md"
+edition = "2024"
+
+[lib]
+name = "lucent_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "=2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.5", features = [] }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+dirs = "=7.0.0"
+image = { version = "=0.25.10", default-features = false, features = ["png", "ico", "jpeg", "bmp", "webp"] }
+nucleo-matcher = "=0.3.1"
+base64 = "=0.22.1"
+ureq = { version = "=2.12.1", features = ["json"] }
+getrandom = "=0.3.4"
+
+[target.'cfg(windows)'.dependencies]
+windows-core = "=0.62.2"
+windows-numerics = "=0.3.1"
+windows = { version = "=0.62.2", features = [
+  "ApplicationModel",
+  "Devices_Radios",
+  "Foundation_Collections",
+  "Management_Deployment",
+  "Media_Control",
+  "Win32_Devices_Display",
+  "Win32_Devices_FunctionDiscovery",
+  "Win32_Foundation",
+  "Win32_Graphics_Dwm",
+  "Win32_Graphics_Gdi",
+  "Win32_Media_Audio",
+  "Win32_Media_Audio_Endpoints",
+  "Win32_NetworkManagement_IpHelper",
+  "Win32_NetworkManagement_Ndis",
+  "Win32_NetworkManagement_WiFi",
+  "Win32_Networking_NetworkListManager",
+  "Win32_Networking_WinSock",
+  "Win32_Security",
+  "Storage_Streams",
+  "Win32_Storage_FileSystem",
+  "Win32_Storage_Packaging_Appx",
+  "Win32_System_Com",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Variant",
+  "Win32_System_Console",
+  "Win32_System_DataExchange",
+  "Win32_System_Diagnostics_Debug",
+  "Win32_System_Diagnostics_ToolHelp",
+  "Win32_System_Kernel",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Memory",
+  "Win32_System_Power",
+  "Win32_System_ProcessStatus",
+  "Win32_System_Registry",
+  "Win32_System_Shutdown",
+  "Win32_System_SystemInformation",
+  "Win32_System_Threading",
+  "Win32_UI_Accessibility",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "System",
+  "UI",
+  "UI_Composition",
+  "UI_Composition_Desktop",
+  "Win32_System_WinRT",
+  "Win32_System_WinRT_Composition",
+  "Win32_UI_Shell",
+  "Win32_UI_Shell_Common",
+  "Win32_UI_Shell_PropertiesSystem",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+# Abort on panic in debug builds too (release already does): the panic hook restores the
+# taskbar, then the process ends instead of unwinding into a half state. Tests ignore it.
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

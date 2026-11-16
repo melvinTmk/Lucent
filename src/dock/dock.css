@@ -1,0 +1,1641 @@
+/* Dock layout. #frame is the window-sized box (sized from main.ts so magnification never
+   resizes the window); #dock is the row of islands, the part that slides. */
+
+:root {
+  /* Media artwork placeholder tile (same values as the search window's --tile). */
+  --tile: rgba(22, 22, 26, 0.07);
+  --font: "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --icon: 36px;
+  --gap: 12px;
+  --pad-main: 14px;
+  --pad-cross: 11px;
+  /* Gap between the islands and the screen edge (the dock floats, as on macOS). */
+  --edge-gap: 6px;
+  --slide-ms: 240ms;
+  --slide-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --speed: 1;
+}
+
+:root[data-tone="dark"] {
+  --tile: rgba(255, 255, 255, 0.12);
+}
+
+html,
+body {
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+#frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+#dock {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  gap: var(--gap);
+  transition: transform var(--slide-ms) var(--slide-ease);
+  transform: translate3d(0, calc(100% + 16px), 0);
+  will-change: transform;
+}
+#dock.shown {
+  transform: none;
+}
+body[data-position="bottom"] #dock {
+  margin-bottom: var(--edge-gap);
+}
+body[data-position="left"] #dock {
+  margin-left: var(--edge-gap);
+}
+body[data-position="right"] #dock {
+  margin-right: var(--edge-gap);
+}
+
+.island {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  gap: var(--gap);
+  padding: var(--pad-cross) var(--pad-main);
+  min-height: var(--icon);
+  min-width: var(--icon);
+}
+/* The glass keeps its rest thickness while icons magnify: bigger icons rise out of it,
+   away from the screen edge, as on macOS (main.ts adds them to the window region). */
+.island.apps {
+  position: relative;
+  box-sizing: border-box;
+  height: calc(var(--icon) + 2 * var(--pad-cross));
+}
+body[data-position="left"] .island.apps,
+body[data-position="right"] .island.apps {
+  height: auto;
+  width: calc(var(--icon) + 2 * var(--pad-cross));
+}
+
+/* #tray holds the chevron (always) + the hosted icons, #sys the system icons + clock. */
+#tray:empty {
+  display: none;
+}
+#tray {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.island.tray {
+  align-items: center;
+  gap: 6px;
+  padding-inline: 8px;
+}
+
+/* ---- Tray icons (Task 10) ------------------------------------------------------- */
+
+#tray {
+  --tray-icon: calc(var(--icon) * 0.46);
+}
+.tray-icon,
+.tray-chevron {
+  all: unset;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: calc(var(--tray-icon) + 10px);
+  height: calc(var(--tray-icon) + 10px);
+  border-radius: 9px;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 120ms ease;
+}
+.tray-chevron {
+  width: 22px;
+  color: var(--ink-soft);
+}
+.tray-icon:hover,
+.tray-chevron:hover,
+.tray-chevron[aria-expanded="true"] {
+  background: var(--sep);
+}
+.tray-icon img {
+  display: block;
+  width: var(--tray-icon);
+  height: var(--tray-icon);
+  object-fit: contain;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+.tray-icon:active img {
+  filter: brightness(0.72);
+}
+.tray-chevron svg {
+  transition: transform 160ms ease;
+}
+.tray-chevron[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+/* Lucent cell: always the panel's last cell (opens the settings). Same size as the
+   tray cells, with a livelier hover: a small lift and a soft blue/violet glow. */
+.tray-lucent {
+  all: unset;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: calc(var(--tray-icon) + 10px);
+  height: calc(var(--tray-icon) + 10px);
+  border-radius: 9px;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 120ms ease,
+    transform 160ms cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+.tray-lucent img {
+  display: block;
+  width: var(--tray-icon);
+  height: var(--tray-icon);
+  pointer-events: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 1px 2px rgba(20, 20, 60, 0.35));
+  transition: filter 160ms ease;
+}
+.tray-lucent:hover {
+  background: var(--sep);
+  transform: scale(1.08);
+}
+.tray-lucent:hover img {
+  filter: drop-shadow(0 2px 6px rgba(90, 70, 255, 0.55));
+}
+.tray-lucent:active {
+  transform: scale(0.96);
+}
+
+/* Overflow panel: its own glass island, above the tray island (towards the screen),
+   aligned on the island's end edge. main.ts grows the window to contain it and adds it
+   to the reported island rects (the window region, so the Acrylic shows behind it).
+   PANEL_GAP in main.ts must match the 10px offset. */
+#tray > .tray-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 4px;
+  padding: 10px;
+  min-width: 0;
+  min-height: 0;
+  z-index: 3;
+  /* Grows out of the chevron, like the Downloads stack. */
+  transform-origin: bottom right;
+  animation: popover-appear 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+body[data-position="left"] #tray > .tray-panel,
+body[data-position="right"] #tray > .tray-panel {
+  bottom: 0;
+}
+body[data-position="left"] #tray > .tray-panel {
+  right: auto;
+  left: calc(100% + 10px);
+}
+body[data-position="right"] #tray > .tray-panel {
+  right: calc(100% + 10px);
+}
+
+/* ---- App icons ---------------------------------------------------------------- */
+
+.app {
+  all: unset;
+  position: relative;
+  flex: none;
+  width: var(--icon);
+  height: var(--icon);
+  transform-origin: 50% 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+.app img,
+.app svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: var(--icon-shadow);
+  pointer-events: none;
+  -webkit-user-drag: none;
+  transition: filter 120ms ease;
+  color: var(--text);
+}
+.app:active img,
+.app:active svg {
+  filter: var(--icon-shadow) brightness(0.72);
+}
+/* Full-bleed square icons (opaque corners) get Apple's rounded-square silhouette, so
+   the row reads as one family; shaped icons (circles, folders) keep their outline. */
+.app.full-bleed img {
+  border-radius: 22.5%;
+}
+
+/* Smooth entry into / exit from magnification; while following the cursor the sizes
+   are set every frame without transition. */
+#frame.settling .app {
+  transition:
+    width 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dot {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--dot);
+  transition: background 300ms ease;
+}
+
+.badge-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #ff3b30;
+  color: #ffffff;
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.island.trash-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 1000;
+  padding: 4px;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--island-bg);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--sep);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 0 0 0.5px rgba(255, 255, 255, 0.15);
+}
+body[data-position="left"] .island.trash-menu,
+body[data-position="right"] .island.trash-menu {
+  bottom: 0;
+}
+body[data-position="left"] .island.trash-menu {
+  right: auto;
+  left: calc(100% + 10px);
+}
+body[data-position="right"] .island.trash-menu {
+  right: calc(100% + 10px);
+}
+.trash-menu-item {
+  all: unset;
+  display: block;
+  box-sizing: border-box;
+  padding: 6px 14px;
+  font-family: var(--font);
+  font-size: 12px;
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.trash-menu-item:hover {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* Downloads Folder Stack Popover */
+.island.stack-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 1000;
+  width: 260px;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  background: var(--island-bg);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--sep);
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35), 0 0 0 0.5px rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  animation: popover-appear 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+body[data-position="left"] .island.stack-popover,
+body[data-position="right"] .island.stack-popover {
+  bottom: 0;
+}
+body[data-position="left"] .island.stack-popover {
+  right: auto;
+  left: calc(100% + 10px);
+}
+body[data-position="right"] .island.stack-popover {
+  right: calc(100% + 10px);
+}
+
+@keyframes popover-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.stack-header {
+  padding: 10px 14px 6px;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+.stack-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 4px;
+  gap: 2px;
+}
+
+.stack-empty {
+  padding: 18px 12px;
+  font-family: var(--font);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.stack-item {
+  all: unset;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.stack-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.stack-item-icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.stack-item-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.stack-item-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stack-item-name {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stack-item-detail {
+  font-family: var(--font);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.stack-footer {
+  border-top: 1px solid var(--sep);
+  padding: 4px;
+}
+
+.stack-footer-btn {
+  all: unset;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 12px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.stack-footer-btn:hover {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.sep {
+  flex: none;
+  align-self: center;
+  width: 1px;
+  height: calc(var(--icon) * 0.72);
+  background: var(--sep);
+  border-radius: 1px;
+}
+
+/* ---- Reorder (drag) ------------------------------------------------------------- */
+
+/* While dragging, the other icons slide out of the way (reorder.ts sets their
+   translate); the dragged one follows the cursor without lag, lifted above its row.
+   The width/height transitions keep the magnification settle smooth meanwhile.
+   #frame #dock outranks `#frame.settling .app`. */
+#frame #dock.reordering .app {
+  transition:
+    transform 180ms var(--slide-ease),
+    width 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+#frame #dock.reordering .app.dragging {
+  z-index: 2;
+  scale: 1.08;
+  transition:
+    width 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* After the drop (or a cancel): icons glide to their final place and the lifted icon
+   settles back to size. */
+#frame #dock.reorder-settle .app {
+  transition:
+    transform 180ms var(--slide-ease),
+    scale 180ms var(--slide-ease);
+}
+body[data-reduce-motion] #frame #dock.reordering .app,
+body[data-reduce-motion] #frame #dock.reorder-settle .app {
+  transition: none;
+}
+
+/* ---- Launch feedback ------------------------------------------------------------ */
+
+/* --hx/--hy: hop direction (away from the screen edge); --sx/--sy: landing squash. */
+.app {
+  --hx: 0;
+  --hy: -1;
+  --sx: 1.07;
+  --sy: 0.9;
+}
+body[data-position="left"] .app {
+  --hx: 1;
+  --hy: 0;
+  --sx: 0.9;
+  --sy: 1.07;
+}
+body[data-position="right"] .app {
+  --hx: -1;
+  --hy: 0;
+  --sx: 0.9;
+  --sy: 1.07;
+}
+@keyframes dock-hop {
+  0% { transform: translate(0, 0) scale(1); animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1); }
+  35% { transform: translate(calc(var(--hx) * 16px), calc(var(--hy) * 16px)); animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.4); }
+  60% { transform: translate(0, 0) scale(var(--sx), var(--sy)); animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1); }
+  75% { transform: translate(calc(var(--hx) * 4px), calc(var(--hy) * 4px)); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes dock-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.94); }
+}
+body[data-anim="spring"] .app.bouncing,
+body[data-anim="spring"] .app.launching {
+  animation: dock-hop calc(750ms / var(--speed)) infinite;
+  will-change: transform;
+}
+body[data-anim="sober"] .app.bouncing,
+body[data-anim="sober"] .app.launching {
+  animation: dock-pulse calc(900ms / var(--speed)) ease-in-out infinite;
+  will-change: opacity, transform;
+}
+body[data-reduce-motion] .app.bouncing,
+body[data-reduce-motion] .app.launching {
+  animation: none;
+}
+
+/* ---- System icons + clock (Task 11) ------------------------------------------- */
+
+#sys {
+  --tray-icon: calc(var(--icon) * 0.46);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.sys-icon {
+  all: unset;
+  flex: none;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: calc(var(--tray-icon) + 10px);
+  height: calc(var(--tray-icon) + 10px);
+  padding: 5px;
+  border-radius: 9px;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 120ms ease;
+}
+.sys-icon:hover,
+.sys-icon[aria-expanded="true"] {
+  background: var(--sep);
+}
+.sys-icon:active svg {
+  opacity: 0.7;
+}
+.sys-icon[data-kind="none"] {
+  color: var(--ink-soft);
+}
+.sys-clock {
+  flex: none;
+  padding: 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* Volume popover: a glass island above the tray island (towards the screen), aligned on
+   its end edge like the overflow panel. main.ts contains it in the window and reports
+   it as an island rect. PANEL_GAP in main.ts must match the 10px offset. */
+#sys > .vol-pop {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 12px 16px;
+  min-width: 0;
+  min-height: 0;
+  z-index: 3;
+}
+#sys > .vol-pop input {
+  width: 140px;
+  margin: 0;
+  accent-color: var(--ink);
+  cursor: default;
+}
+body[data-position="left"] #sys > .vol-pop,
+body[data-position="right"] #sys > .vol-pop {
+  flex-direction: row;
+  align-items: center;
+  padding: 12px 16px;
+  bottom: 0;
+}
+body[data-position="left"] #sys > .vol-pop {
+  right: auto;
+  left: calc(100% + 10px);
+}
+body[data-position="right"] #sys > .vol-pop {
+  right: calc(100% + 10px);
+}
+
+/* ---- Media island (Task M3-5) ----------------------------------------------------- */
+
+/* Same thickness as the apps island: artwork · title/artist · previous, play/pause, next. */
+.island.media {
+  box-sizing: border-box;
+  height: calc(var(--icon) + 2 * var(--pad-cross));
+  align-items: center;
+  gap: 10px;
+  padding-inline: var(--pad-cross) 10px;
+  color: var(--ink);
+}
+.media-art {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--icon);
+  height: var(--icon);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--tile);
+  color: var(--ink-soft);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.media-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+.media-art img[hidden],
+.media-art.has-art .media-placeholder {
+  display: none;
+}
+.media-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+.media-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  max-width: 150px;
+  line-height: 1.25;
+}
+.media-title,
+.media-artist {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.media-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.media-artist {
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.media-title[hidden],
+.media-artist[hidden] {
+  display: none;
+}
+.media-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.media-btn {
+  all: unset;
+  flex: none;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  padding: 7px;
+  border-radius: 50%;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 120ms ease,
+    opacity 120ms ease;
+}
+.media-btn[data-media-action="play_pause"] {
+  padding: 6px;
+}
+.media-btn:not(:disabled):hover {
+  background: var(--sep);
+}
+.media-btn:not(:disabled):active svg {
+  opacity: 0.7;
+  transform: scale(0.92);
+}
+.media-btn:disabled {
+  opacity: 0.35;
+}
+.media-btn svg {
+  transition: transform 100ms ease;
+}
+
+/* ---- Left / Right: islands in a column ------------------------------------------ */
+
+body[data-position="left"] #frame,
+body[data-position="right"] #frame {
+  flex-direction: column;
+}
+body[data-position="left"] #frame {
+  align-items: flex-start;
+}
+body[data-position="right"] #frame {
+  align-items: flex-end;
+}
+body[data-position="left"] #dock,
+body[data-position="right"] #dock,
+body[data-position="left"] .island,
+body[data-position="right"] .island {
+  flex-direction: column;
+}
+body[data-position="left"] .island,
+body[data-position="right"] .island {
+  padding: var(--pad-main) var(--pad-cross);
+}
+body[data-position="left"] #dock,
+body[data-position="left"] .island {
+  align-items: flex-start;
+}
+body[data-position="right"] #dock,
+body[data-position="right"] .island {
+  align-items: flex-end;
+}
+body[data-position="left"] #dock {
+  transform: translate3d(calc(-100% - 16px), 0, 0);
+}
+body[data-position="right"] #dock {
+  transform: translate3d(calc(100% + 16px), 0, 0);
+}
+body[data-position="left"] #dock.shown,
+body[data-position="right"] #dock.shown {
+  transform: none;
+}
+body[data-position="left"] .app {
+  transform-origin: 0 50%;
+}
+body[data-position="right"] .app {
+  transform-origin: 100% 50%;
+}
+body[data-position="left"] .dot,
+body[data-position="right"] .dot {
+  top: 50%;
+  bottom: auto;
+  left: auto;
+  margin: -2px 0 0;
+}
+body[data-position="left"] .dot {
+  left: -7px;
+}
+body[data-position="right"] .dot {
+  right: -7px;
+}
+body[data-position="left"] .sep,
+body[data-position="right"] .sep {
+  width: calc(var(--icon) * 0.72);
+  height: 1px;
+}
+body[data-position="left"] #tray,
+body[data-position="right"] #tray,
+body[data-position="left"] #sys,
+body[data-position="right"] #sys {
+  flex-direction: column;
+}
+body[data-position="left"] .island.tray,
+body[data-position="right"] .island.tray {
+  padding: 8px var(--pad-cross);
+}
+body[data-position="left"] .tray-chevron,
+body[data-position="right"] .tray-chevron {
+  width: calc(var(--tray-icon) + 10px);
+  height: 22px;
+}
+body[data-position="left"] .tray-chevron svg {
+  transform: rotate(90deg);
+}
+body[data-position="right"] .tray-chevron svg {
+  transform: rotate(-90deg);
+}
+body[data-position="left"] .tray-chevron[aria-expanded="true"] svg {
+  transform: rotate(-90deg);
+}
+body[data-position="right"] .tray-chevron[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+body[data-position="left"] .sys-clock,
+body[data-position="right"] .sys-clock {
+  padding: 2px 0;
+  font-size: 12px;
+}
+/* Vertical media island: no text, artwork then the three buttons in a column. */
+body[data-position="left"] .island.media,
+body[data-position="right"] .island.media {
+  height: auto;
+  width: calc(var(--icon) + 2 * var(--pad-cross));
+  align-items: center;
+  padding: var(--pad-cross) var(--pad-cross) 8px;
+}
+body[data-position="left"] .media-text,
+body[data-position="right"] .media-text {
+  display: none;
+}
+body[data-position="left"] .media-controls,
+body[data-position="right"] .media-controls {
+  flex-direction: column;
+}
+
+/* Game Mode, monitor other than the game's: nothing moves (no slide, hover, launch
+   animation; magnification is off in main.ts). Rust also slides the glass in 0 ms. */
+body[data-game="other"] *,
+body[data-game="other"] *::before,
+body[data-game="other"] *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* ---- Game Mode system pill (monitors other than the game's) ---------------------- */
+
+/* Pill mode: the hidden dock window stays on-screen showing only the pill (Rust clips it
+   to the reported islands, i.e. the pill and its panel). #dock does not slide away. */
+body[data-game] #dock.pill-mode {
+  transform: none;
+}
+#dock.pill-mode > .island:not(.pill) {
+  display: none;
+}
+
+/* #dock: outranks the left/right `.island` padding and direction. */
+#dock > .island.pill {
+  flex-direction: row;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  align-items: center;
+}
+.pill-line {
+  all: unset;
+  display: block;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  line-height: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Detail panel: its own glass island above the pill (towards the screen), aligned on the
+   pill's end edge, like the tray overflow panel (PANEL_GAP in main.ts = the 10px). */
+.island.pill > .pill-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 260px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  min-width: 0;
+  min-height: 0;
+  z-index: 3;
+  font-size: 12px;
+  color: var(--ink);
+}
+body[data-position="left"] .island.pill > .pill-panel,
+body[data-position="right"] .island.pill > .pill-panel {
+  bottom: 0;
+}
+body[data-position="left"] .island.pill > .pill-panel {
+  right: auto;
+  left: calc(100% + 10px);
+}
+body[data-position="right"] .island.pill > .pill-panel {
+  right: calc(100% + 10px);
+}
+.pill-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 12px;
+  margin: 0;
+}
+.pill-rows dt {
+  color: var(--ink-soft);
+}
+.pill-rows dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.pill-actions {
+  display: flex;
+  gap: 6px;
+}
+.pill-actions[hidden],
+.pill-confirm[hidden] {
+  display: none;
+}
+.pill-btn {
+  all: unset;
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--sep);
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+.pill-btn:hover {
+  filter: brightness(1.15);
+}
+.pill-btn:disabled {
+  opacity: 0.45;
+}
+.pill-btn.danger {
+  background: rgba(220, 50, 50, 0.85);
+  color: #fff;
+}
+.pill-confirm-text {
+  margin: 0 0 6px;
+  line-height: 1.35;
+}
+.pill-result {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.35;
+}
+.pill-result:empty {
+  display: none;
+}
+
+/* Post-match card & ask prompt island */
+.island.card {
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  padding: 6px 14px;
+}
+.island.card.win {
+  color: #2ed573;
+}
+.island.card.loss {
+  color: #ff4757;
+}
+.island.card.draw {
+  color: var(--ink-soft);
+}
+/* Valorant post-match card: one band exactly as tall as the dock's islands, so it reads
+   as another island of the dock. Map splash under a navy shade, agent face on the left,
+   condensed DIN (Bahnschrift ships with Windows). Valorant navy #0f1923, red #ff4655. */
+.island.card.valo {
+  --vc-accent: #19e2a3;
+  --vc-navy: 15, 25, 35;
+  --vc-font: "Bahnschrift", "DIN Alternate", "Segoe UI", system-ui, sans-serif;
+  --vc-h: calc(var(--icon) + 2 * var(--pad-cross));
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  height: var(--vc-h);
+  padding: 0 16px 0 0;
+  color: #ece8e1;
+  font-family: var(--vc-font);
+  line-height: 1;
+  white-space: nowrap;
+}
+.island.card.valo:not(.has-agent) {
+  padding-left: 14px;
+}
+.island.card.valo.loss {
+  --vc-accent: #ff4655;
+}
+.island.card.valo.draw {
+  --vc-accent: #c7cbd1;
+}
+.vc-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background: rgb(var(--vc-navy));
+}
+.vc-splash {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 45%;
+}
+.vc-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(var(--vc-navy), 0.9) 0%, rgba(var(--vc-navy), 0.82) 60%, rgba(var(--vc-navy), 0.6) 100%),
+    radial-gradient(80% 160% at 0% 100%, color-mix(in srgb, var(--vc-accent) 26%, transparent) 0%, transparent 70%);
+}
+/* Accent hairline along the bottom edge. */
+.vc-stripe {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--vc-accent), color-mix(in srgb, var(--vc-accent) 0%, transparent) 80%);
+}
+/* Agent face: a square the height of the band, the portrait framed on the head. */
+.vc-agent {
+  position: relative;
+  flex: none;
+  align-self: stretch;
+  width: calc(var(--vc-h) * 1.15);
+  overflow: hidden;
+  border-radius: inherit;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 70%, transparent 100%);
+}
+.vc-agent-img {
+  /* fullportrait.png: whole body with wide margins; the face sits near (49 %, 18 %). */
+  position: absolute;
+  left: 50%;
+  top: calc(var(--vc-h) * -0.16);
+  width: calc(var(--vc-h) * 4.3);
+  height: auto;
+  max-width: none;
+  transform: translateX(-54%);
+}
+.vc-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.vc-sep {
+  position: relative;
+  flex: none;
+  width: 1px;
+  height: 56%;
+  background: rgba(236, 232, 225, 0.16);
+}
+.vc-kicker {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(236, 232, 225, 0.6);
+}
+.vc-head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.vc-result {
+  font-size: 19px;
+  font-weight: 700;
+  font-stretch: 75%;
+  letter-spacing: 0.04em;
+  color: var(--vc-accent);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--vc-accent) 40%, transparent);
+}
+.vc-score {
+  font-size: 15px;
+  font-weight: 600;
+  font-stretch: 75%;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.vc-stats {
+  position: relative;
+  display: flex;
+  gap: 11px;
+}
+.vc-stat {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+}
+.vc-stat-label {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: rgba(236, 232, 225, 0.5);
+}
+.vc-stat-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.vc-rank {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.vc-tier {
+  flex: none;
+  width: calc(var(--vc-h) * 0.5);
+  height: calc(var(--vc-h) * 0.5);
+  object-fit: contain;
+}
+.vc-rank-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.vc-rr {
+  font-variant-numeric: tabular-nums;
+}
+.vc-rr.up {
+  color: #19e2a3;
+}
+.vc-rr.down {
+  color: #ff4655;
+}
+.vc-tier-name {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(236, 232, 225, 0.82);
+}
+.vc-next {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(236, 232, 225, 0.66);
+}
+.vc-next-bar {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 3px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: rgba(236, 232, 225, 0.16);
+}
+.vc-next-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--vc-accent);
+}
+.vc-next-text {
+  font-variant-numeric: tabular-nums;
+}
+.island.card.ask {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-prompt {
+  font-size: 12px;
+  color: var(--ink);
+}
+.card-btn {
+  all: unset;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--sep);
+  color: var(--ink);
+  cursor: pointer;
+}
+.card-btn:hover {
+  filter: brightness(1.15);
+}
+.card-btn.primary {
+  background: rgba(43, 92, 255, 0.85);
+  color: #fff;
+}
+
+/* OS file drag over an app icon (drop to open with it). */
+.app.drop-target img,
+.app.drop-target svg {
+  transform: scale(1.25);
+  filter: drop-shadow(0 0 0 transparent);
+}
+.app.drop-target {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 14px rgba(120, 160, 255, 0.7);
+  border-radius: 22%;
+}
+body[data-reduce-motion] .app.drop-target img,
+body[data-reduce-motion] .app.drop-target svg {
+  transform: none;
+}
+
+/* ---- Control Center (M6 Track C) -------------------------------------------------- */
+
+/* The clock opens it: a soft hover plate like the system icons. */
+.sys-clock.cc-enabled {
+  border-radius: 9px;
+  padding: 4px 8px;
+  margin: 0 -2px;
+  transition: background 120ms ease;
+}
+.sys-clock.cc-enabled:hover,
+.sys-clock.cc-enabled[aria-expanded="true"] {
+  background: var(--sep);
+}
+
+/* Glass island above the tray island (towards the screen), aligned on its end edge like
+   the volume popover. Its box never animates: the window region (and the native Acrylic)
+   is cut to it at once, so only the content fades/rises in. main.ts contains it in the
+   window (PANEL_GAP = the 10px offset); --radius stays the island radius region.rs uses. */
+#sys > .cc-panel {
+  --cc-module: rgba(255, 255, 255, 0.3);
+  --cc-module-hi: inset 0 0.5px 0 rgba(255, 255, 255, 0.55), inset 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  --cc-hover: rgba(22, 22, 26, 0.07);
+  --cc-glyph: rgba(22, 22, 26, 0.1);
+  --cc-accent: #0a84ff;
+  --cc-track: rgba(22, 22, 26, 0.12);
+  --cc-fill: rgba(255, 255, 255, 0.96);
+  --cc-slider-ink: rgba(22, 22, 26, 0.55);
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 3;
+  box-sizing: border-box;
+  width: 316px;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+  cursor: default;
+  user-select: none;
+  font-size: 13px;
+  line-height: 1.25;
+}
+:root[data-tone="dark"] #sys > .cc-panel {
+  --cc-module: rgba(255, 255, 255, 0.08);
+  --cc-module-hi: inset 0 0.5px 0 rgba(255, 255, 255, 0.14), inset 0 0 0 0.5px rgba(255, 255, 255, 0.04);
+  --cc-hover: rgba(255, 255, 255, 0.08);
+  --cc-glyph: rgba(255, 255, 255, 0.14);
+  --cc-track: rgba(255, 255, 255, 0.14);
+  --cc-fill: rgba(255, 255, 255, 0.92);
+}
+body[data-position="left"] #sys > .cc-panel,
+body[data-position="right"] #sys > .cc-panel {
+  bottom: 0;
+}
+body[data-position="left"] #sys > .cc-panel {
+  right: auto;
+  left: calc(100% + 10px);
+}
+body[data-position="right"] #sys > .cc-panel {
+  right: calc(100% + 10px);
+}
+
+.cc-panel > * {
+  animation: cc-rise 260ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+.cc-panel > :nth-child(2) {
+  animation-delay: 25ms;
+}
+.cc-panel > :nth-child(3) {
+  animation-delay: 50ms;
+}
+@keyframes cc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+}
+body[data-reduce-motion] .cc-panel > * {
+  animation: none;
+}
+
+.cc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.cc-power-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 4px 0;
+}
+.cc-power-row[hidden],
+.cc-power-confirm[hidden] {
+  display: none;
+}
+.cc-power-btn {
+  all: unset;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  padding: 11px;
+  border-radius: 50%;
+  background: var(--cc-module);
+  box-shadow: var(--cc-module-hi);
+  color: inherit;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+.cc-power-btn:hover {
+  background: var(--cc-hover);
+}
+.cc-power-btn[data-power="shutdown"]:hover,
+.cc-power-btn[data-power="restart"]:hover {
+  background: rgba(220, 50, 50, 0.85);
+  color: #fff;
+}
+.cc-power-confirm {
+  padding: 4px 4px 0;
+}
+.cc-power-text {
+  margin: 0 0 8px;
+  line-height: 1.35;
+  font-weight: 500;
+}
+.cc-power-actions {
+  display: flex;
+  gap: 8px;
+}
+.cc-power-cancel,
+.cc-power-go {
+  all: unset;
+  flex: 1;
+  padding: 7px 8px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+  background: var(--cc-module);
+  box-shadow: var(--cc-module-hi);
+  cursor: default;
+}
+.cc-power-go {
+  background: rgba(220, 50, 50, 0.9);
+  color: #fff;
+}
+.cc-power-cancel:hover,
+.cc-power-go:hover {
+  filter: brightness(1.12);
+}
+.cc-module {
+  box-sizing: border-box;
+  min-width: 0;
+  border-radius: 16px;
+  background: var(--cc-module);
+  box-shadow: var(--cc-module-hi);
+}
+.cc-connect {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px;
+}
+.cc-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Toggles: connectivity rows and the right-column tiles. */
+.cc-row,
+.cc-tile {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 140ms ease, transform 140ms ease;
+}
+.cc-row {
+  padding: 5px;
+  border-radius: 11px;
+}
+.cc-tile {
+  flex: 1;
+  padding: 10px;
+  border-radius: 16px;
+}
+.cc-row:hover {
+  background: var(--cc-hover);
+}
+.cc-tile:hover {
+  background: color-mix(in srgb, var(--cc-module), var(--ink) 6%);
+}
+.cc-row:active,
+.cc-tile:active {
+  transform: scale(0.97);
+}
+.cc-glyph {
+  flex: none;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  padding: 6px;
+  border-radius: 50%;
+  background: var(--cc-glyph);
+  color: var(--ink);
+  transition: background 180ms ease, color 180ms ease;
+}
+.cc-glyph svg {
+  display: block;
+}
+.cc-row.on .cc-glyph,
+.cc-tile.on .cc-glyph {
+  background: var(--cc-accent);
+  color: #fff;
+}
+.cc-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.cc-label {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cc-sub {
+  font-size: 11px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cc-sub[hidden] {
+  display: none;
+}
+
+/* Écran / Son modules: title + a thick macOS slider (knob at the end of a white fill). */
+.cc-display,
+.cc-sound {
+  padding: 10px 12px 12px;
+}
+.cc-title {
+  margin: 0 0 8px 2px;
+  font-weight: 600;
+}
+.cc-slider {
+  position: relative;
+  height: 24px;
+}
+.cc-slider input {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  border-radius: 12px;
+  outline: none;
+  cursor: default;
+  /* The fill ends under the knob's centre (12px .. width - 12px). */
+  background: linear-gradient(
+    to right,
+    var(--cc-fill) calc(12px + (100% - 24px) * var(--pn, 0)),
+    var(--cc-track) 0
+  );
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+.cc-slider input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0.5px 3px rgba(0, 0, 0, 0.32), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  transition: transform 140ms ease;
+}
+.cc-slider input:active::-webkit-slider-thumb {
+  transform: scale(1.06);
+}
+.cc-slider-glyph {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  width: 14px;
+  height: 14px;
+  color: var(--cc-slider-ink);
+  pointer-events: none;
+}
+.cc-slider-glyph svg {
+  display: block;
+}
+
+/* Output list: radio rows, the chosen one with a blue glyph and a check. */
+.cc-outputs {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 0.5px solid var(--sep);
+}
+.cc-output {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  color: var(--ink);
+  transition: background 120ms ease;
+}
+.cc-output:hover {
+  background: var(--cc-hover);
+}
+.cc-out-glyph {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  padding: 5px;
+  border-radius: 50%;
+  background: var(--cc-glyph);
+  transition: background 180ms ease, color 180ms ease;
+}
+.cc-output.on .cc-out-glyph {
+  background: var(--cc-accent);
+  color: #fff;
+}
+.cc-out-glyph svg,
+.cc-out-check svg {
+  display: block;
+}
+.cc-out-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cc-out-check {
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+.cc-output.on .cc-out-check {
+  opacity: 1;
+}
+
+/* ---- M6 Track B: muted mic glyph + mic toggle card -------------------------------- */
+.sys-icon.sys-mic {
+  color: #ff3b30;
+}
+.island.card.mic {
+  font-weight: 600;
+}
+.island.card.display-switch {
+  font-weight: 600;
+}
+.island.card.display-switch.failed {
+  color: #ff4757;
+}
+.island.card.mic.muted {
+  color: #ff3b30;
+}

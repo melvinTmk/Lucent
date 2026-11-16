@@ -1,0 +1,153 @@
+{
+ "status": 200,
+ "data": [
+  {
+   "metadata": {
+    "match_id": "4cb409fe-1ecb-4673-a6c3-77e2cc77f41f",
+    "map": {
+     "name": "Bind"
+    },
+    "queue": {
+     "id": "competitive",
+     "name": "Competitive",
+     "mode_type": "Standard"
+    },
+    "started_at": "2026-11-09T18:44:07.177Z",
+    "game_length_in_ms": 2112281
+   },
+   "teams": [
+    {
+     "team_id": "Red",
+     "rounds": {
+      "won": 10,
+      "lost": 13
+     },
+     "won": false
+    },
+    {
+     "team_id": "Blue",
+     "rounds": {
+      "won": 13,
+      "lost": 10
+     },
+     "won": true
+    }
+   ],
+   "players": [
+    {
+     "name": "Player1",
+     "tag": "0000",
+     "team_id": "Blue",
+     "agent": {
+      "name": "Reyna"
+     },
+     "stats": {
+      "kills": 22,
+      "deaths": 17,
+      "assists": 5
+     }
+    },
+    {
+     "name": "Player2",
+     "tag": "0000",
+     "team_id": "Blue",
+     "agent": {
+      "name": "Omen"
+     },
+     "stats": {
+      "kills": 15,
+      "deaths": 14,
+      "assists": 12
+     }
+    },
+    {
+     "name": "Sentinel",
+     "tag": "EUW",
+     "team_id": "Blue",
+     "agent": {
+      "name": "Fade"
+     },
+     "stats": {
+      "kills": 15,
+      "deaths": 16,
+      "assists": 9
+     }
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "match_id": "eee5ee27-eb19-4d42-8c56-970dd701a602",
+    "map": {
+     "name": "Sunset"
+    },
+    "queue": {
+     "id": "competitive",
+     "name": "Competitive",
+     "mode_type": "Standard"
+    },
+    "started_at": "2026-11-09T17:59:31.848Z",
+    "game_length_in_ms": 1858306
+   },
+   "teams": [
+    {
+     "team_id": "Red",
+     "rounds": {
+      "won": 13,
+      "lost": 6
+     },
+     "won": true
+    },
+    {
+     "team_id": "Blue",
+     "rounds": {
+      "won": 6,
+      "lost": 13
+     },
+     "won": false
+    }
+   ],
+   "players": [
+    {
+     "name": "Sentinel",
+     "tag": "EUW",
+     "team_id": "Blue",
+     "agent": {
+      "name": "Fade"
+     },
+     "stats": {
+      "kills": 12,
+      "deaths": 16,
+      "assists": 5
+     }
+    },
+    {
+     "name": "Player1",
+     "tag": "0000",
+     "team_id": "Blue",
+     "agent": {
+      "name": "Skye"
+     },
+     "stats": {
+      "kills": 10,
+      "deaths": 17,
+      "assists": 4
+     }
+    },
+    {
+     "name": "Player2",
+     "tag": "0000",
+     "team_id": "Blue",
+     "agent": {
+      "name": "Brimstone"
+     },
+     "stats": {
+      "kills": 4,
+      "deaths": 18,
+      "assists": 3
+     }
+    }
+   ]
+  }
+ ]
+}

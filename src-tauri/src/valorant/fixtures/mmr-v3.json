@@ -1,0 +1,18 @@
+{
+ "status": 200,
+ "data": {
+  "account": {
+   "name": "Sentinel",
+   "tag": "EUW"
+  },
+  "current": {
+   "tier": {
+    "id": 19,
+    "name": "Diamond 2"
+   },
+   "rr": 76,
+   "last_change": 16,
+   "elo": 1676
+  }
+ }
+}

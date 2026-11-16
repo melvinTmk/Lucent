@@ -1,0 +1,122 @@
+/* App switcher: one Liquid Glass island (tokens from ../shared/glass.css) filling the
+   window; the native glass under the webview is clipped to the same rounded rect. Window
+   thumbnails (↓) are DWM surfaces drawn by Windows over the `.win` cards. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  user-select: none;
+  cursor: default;
+}
+
+#island {
+  --radius: 26px;
+  position: fixed;
+  inset: 0;
+}
+
+/* Selection plate: glides between slots (Cmd+Tab's soft rounded square). */
+.sel {
+  position: absolute;
+  left: 0;
+  border-radius: calc(var(--cell) * 0.22);
+  background: var(--lens);
+  box-shadow:
+    inset 0 0 0 1px var(--rim-lo),
+    inset 0 1px 0 var(--rim-hi);
+  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+:root[data-tone="light"] .sel {
+  background: rgba(255, 255, 255, 0.34);
+}
+
+:root[data-tone="dark"] .sel {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.sel.instant,
+body[data-reduce-motion] .sel {
+  transition: none;
+}
+
+.slot {
+  position: absolute;
+  display: grid;
+  place-items: center;
+}
+
+.slot img {
+  filter: var(--icon-shadow);
+  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.slot[aria-selected="true"] img {
+  transform: scale(1.04);
+}
+
+body[data-reduce-motion] .slot img {
+  transition: none;
+}
+
+.name {
+  position: absolute;
+  transform: translateX(-50%);
+  max-width: 280px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 26px;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.windows {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.win {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 14px;
+  pointer-events: auto;
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.win:hover {
+  background: var(--lens);
+}
+
+.win[aria-selected="true"] {
+  background: var(--lens);
+  box-shadow:
+    inset 0 0 0 2px rgba(10, 132, 255, 0.9),
+    0 0 0 0.5px var(--rim-lo);
+}
+
+.win .title {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 4px;
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.win[aria-selected="true"] .title {
+  font-weight: 600;
+}

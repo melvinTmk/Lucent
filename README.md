@@ -14,11 +14,15 @@ way while you play.
 > The interface is currently in **French only**. Translations are welcome, see
 > [CONTRIBUTING.md](CONTRIBUTING.md).
 
-<!-- Add screenshots here: docs/screenshots/dock.png, search.png, control-center.png -->
+<p align="center"><img src="docs/screenshots/hero.jpg" alt="Lucent: glass dock and search on Windows 11"></p>
+<p align="center"><sub>Screenshots use demo data.</sub></p>
 
 ## Features
 
 **Dock**
+
+![Dock](docs/screenshots/dock.png)
+
 - Floating glass islands (native Windows composition blur), one dock per monitor, bottom,
   left or right.
 - Pinned and running apps with real high-resolution icons, magnification, drag to reorder,
@@ -32,6 +36,9 @@ way while you play.
   killed or crashes, and the uninstaller restores it too.
 
 **Search** (`Alt+Space`)
+
+<img src="docs/screenshots/search.png" width="560" alt="Search">
+
 - Apps, files, WSL projects (opened in VS Code), recent items.
 - Calculator, web search (`? query`), power commands (lock, sleep, restart...), `kill app`.
 - Clipboard history (`cb`), emoji picker (`:smile`), Quick Look preview (`Shift+Space`).
@@ -45,6 +52,9 @@ way while you play.
 - Hot corners (overview, desktop, lock, search, switcher).
 
 **Control center** (click the clock)
+
+<img src="docs/screenshots/control-center.png" width="300" alt="Control center">
+
 - Wi-Fi, Bluetooth, microphone mute, dark mode, monitor brightness (DDC/CI), volume and
   audio output, power menu.
 - **Shared monitor**: switch a monitor plugged into two computers to the other PC's input
@@ -52,6 +62,9 @@ way while you play.
   shows the other one, so windows and the cursor stay on your other screens.
 
 **Game Mode**
+
+![Valorant post-match card](docs/screenshots/valorant.png)
+
 - Detects games (Steam, Epic, Riot libraries, plus your own list), keeps the dock and hotkeys out of
   the way, optional High performance power plan, a small system monitor pill (CPU, GPU,
   RAM, ping) on the other monitors.

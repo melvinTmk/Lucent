@@ -11,11 +11,15 @@ fenêtres, un centre de contrôle et un Mode Jeu qui se fait oublier quand tu jo
 
 [English](README.md) · [Télécharger](../../releases/latest) · [Licence : GPL-3.0](LICENSE)
 
-<!-- Ajouter des captures ici : docs/screenshots/dock.png, search.png, control-center.png -->
+<p align="center"><img src="docs/screenshots/hero.jpg" alt="Lucent : dock en verre et recherche sur Windows 11"></p>
+<p align="center"><sub>Captures réalisées avec des données de démonstration.</sub></p>
 
 ## Fonctionnalités
 
 **Dock**
+
+![Dock](docs/screenshots/dock.png)
+
 - Îlots en verre flottants (flou natif de Windows), un dock par écran, en bas, à gauche ou
   à droite.
 - Apps épinglées et ouvertes avec leurs vraies icônes, effet loupe, réorganisation par
@@ -30,6 +34,9 @@ fenêtres, un centre de contrôle et un Mode Jeu qui se fait oublier quand tu jo
   Lucent est tué ou plante, et la désinstallation la remet aussi.
 
 **Recherche** (`Alt+Espace`)
+
+<img src="docs/screenshots/search.png" width="560" alt="Search">
+
 - Apps, fichiers, projets WSL (ouverts dans VS Code), éléments récents.
 - Calculatrice, recherche web (`? requête`), commandes d'alimentation (verrouiller, veille,
   redémarrer…), `kill app`.
@@ -43,6 +50,9 @@ fenêtres, un centre de contrôle et un Mode Jeu qui se fait oublier quand tu jo
 - Coins actifs (vue des fenêtres, bureau, verrouiller, recherche, sélecteur).
 
 **Centre de contrôle** (clic sur l'horloge)
+
+<img src="docs/screenshots/control-center.png" width="300" alt="Control center">
+
 - Wi-Fi, Bluetooth, micro coupé, mode sombre, luminosité de l'écran (DDC/CI), volume et
   sortie audio, menu d'alimentation.
 - **Écran partagé** : bascule un écran branché à deux ordinateurs sur l'entrée de l'autre
@@ -50,6 +60,9 @@ fenêtres, un centre de contrôle et un Mode Jeu qui se fait oublier quand tu jo
   qu'il affiche l'autre : les fenêtres et la souris restent sur tes autres écrans.
 
 **Mode Jeu**
+
+![Valorant post-match card](docs/screenshots/valorant.png)
+
 - Détecte les jeux (bibliothèques Steam, Epic, Riot, plus ta propre liste), écarte le dock
   et les raccourcis, mode d'alimentation Performances élevées en option, petite pastille
   de suivi (CPU, GPU, RAM, ping) sur les autres écrans.

@@ -6,6 +6,7 @@ import type {
   HotCornerAction,
   MonitorSelection,
   Settings,
+  SnapShortcuts,
 } from "../shared/types";
 
 /** Flat view of every control. `cardDurationSec` is seconds (the UI unit), the model stores ms. */
@@ -65,6 +66,7 @@ export interface FormState {
   displayOtherLabel: string;
   displayDetach: boolean;
   displaySwitchHotkey: string;
+  snapCombos: SnapShortcuts;
 }
 
 export const CORNER_ACTIONS: HotCornerAction[] = ["none", "overview", "desktop", "lock", "search", "switcher"];
@@ -126,6 +128,7 @@ export function settings_to_form(s: Settings): FormState {
     displayOtherLabel: s.displaySwitch.otherLabel,
     displayDetach: s.displaySwitch.detach,
     displaySwitchHotkey: s.shortcuts.displaySwitch,
+    snapCombos: { ...s.shortcuts.snap },
   };
 }
 
@@ -194,6 +197,7 @@ export function form_to_settings(form: FormState, base: Settings): Settings {
       overview: form.overviewHotkey.trim(),
       micMute: form.micMuteHotkey.trim(),
       displaySwitch: form.displaySwitchHotkey.trim(),
+      snap: Object.fromEntries(Object.entries(form.snapCombos).map(([k, v]) => [k, v.trim()])) as SnapShortcuts,
       snapping: form.snapping,
     },
     hotCorners: {

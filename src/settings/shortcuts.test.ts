@@ -53,7 +53,7 @@ describe("shortcuts form mapping", () => {
       controlCenter: false, quickLook: false,
     };
     const out = form_to_settings(f, baseSettings);
-    expect(out.shortcuts).toEqual({ switcher: "Alt+Q", overview: "", snapping: false, micMute: "Ctrl+Alt+K", displaySwitch: "Ctrl+Alt+O" });
+    expect(out.shortcuts).toEqual({ switcher: "Alt+Q", overview: "", snapping: false, micMute: "Ctrl+Alt+K", displaySwitch: "Ctrl+Alt+O", snap: baseSettings.shortcuts.snap });
     expect(out.hotCorners).toEqual({ topLeft: "overview", topRight: "lock", bottomLeft: "desktop", bottomRight: "none" });
     expect(out.controlCenter).toBe(false);
     expect(out.quickLook).toBe(false);
@@ -107,6 +107,46 @@ describe("capture of M6 keys", () => {
     expect(wrap.querySelector(".hotkey-error")!.textContent).toBe("Le changeur d'apps doit utiliser Alt");
     input.dispatchEvent(key({ key: "q", code: "KeyQ", altKey: true }));
     expect(set).toHaveBeenCalledWith("Alt+Q");
+  });
+});
+
+describe("keycap field", () => {
+  it("draws the combination as keycaps and records on focus (hotkeys paused meanwhile)", () => {
+    invoke.mockClear();
+    const set = vi.fn();
+    const wrap = hotkeyField("k", "Ctrl+Alt+Left", set, { defaultValue: "Ctrl+Alt+Left" });
+    document.body.append(wrap);
+    expect([...wrap.querySelectorAll("kbd")].map((k) => k.textContent)).toEqual(["Ctrl", "Alt", "←"]);
+    const input = wrap.querySelector("input")!;
+    input.focus();
+    expect(wrap.classList.contains("recording")).toBe(true);
+    expect(invoke).toHaveBeenCalledWith("hotkeys_pause", { paused: true });
+    input.dispatchEvent(key({ key: "Control", code: "ControlLeft", ctrlKey: true }));
+    expect([...wrap.querySelectorAll("kbd")].map((k) => k.textContent)).toEqual(["Ctrl"]);
+    input.dispatchEvent(key({ key: "h", code: "KeyH", ctrlKey: true, shiftKey: true }));
+    expect(set).toHaveBeenCalledWith("Ctrl+Shift+H");
+    expect(wrap.classList.contains("recording")).toBe(false);
+    expect(invoke).toHaveBeenCalledWith("hotkeys_pause", { paused: false });
+    expect([...wrap.querySelectorAll("kbd")].map((k) => k.textContent)).toEqual(["Ctrl", "Maj", "H"]);
+    // Changed from the default: ↺ shows and puts it back.
+    const reset = wrap.querySelector<HTMLButtonElement>(".hk-reset")!;
+    expect(reset.hidden).toBe(false);
+    reset.click();
+    expect(set).toHaveBeenLastCalledWith("Ctrl+Alt+Left");
+    expect(reset.hidden).toBe(true);
+    wrap.remove();
+  });
+
+  it("refuses a combination another Lucent shortcut uses, and × disables", () => {
+    const set = vi.fn();
+    const wrap = hotkeyField("c", "Ctrl+Alt+M", set, { allowEmpty: true, conflict: (c) => (c === "Alt+Space" ? "Recherche" : null) });
+    const input = wrap.querySelector("input")!;
+    input.dispatchEvent(key({ key: " ", code: "Space", altKey: true }));
+    expect(set).not.toHaveBeenCalled();
+    expect(wrap.querySelector(".hotkey-error")!.textContent).toBe("Déjà utilisé par « Recherche »");
+    wrap.querySelector<HTMLButtonElement>(".hk-clear")!.click();
+    expect(set).toHaveBeenCalledWith("");
+    expect(wrap.querySelector(".hk-placeholder")!.textContent).toBe("Désactivé");
   });
 });
 
@@ -170,6 +210,20 @@ describe("Raccourcis tab", () => {
     expect(document.getElementById("sc-switcher-taken")!.textContent).toBe("");
     expect(document.getElementById("sc-mic-taken")!.textContent).toContain("Déjà utilisé par une autre app");
     expect(document.getElementById("sc-snapping-taken")!.textContent).toBe("");
+  });
+
+  it("lists the nine snapping shortcuts, editable, and blocks a duplicate", async () => {
+    await openTab();
+    const left = document.querySelector<HTMLInputElement>("#sc-snap-left")!;
+    expect(left.value).toBe("Ctrl+Alt+Left");
+    expect(document.querySelectorAll('[id^="sc-snap-"]').length).toBeGreaterThanOrEqual(9);
+    // Ctrl+Alt+M belongs to « Couper le micro ».
+    left.dispatchEvent(key({ key: "m", code: "KeyM", ctrlKey: true, altKey: true }));
+    expect(left.closest(".hotkey")!.querySelector(".hotkey-error")!.textContent).toContain("Couper le micro");
+    left.dispatchEvent(key({ key: "h", code: "KeyH", metaKey: true, altKey: true }));
+    await vi.waitFor(() => expect(invoke.mock.calls.some((c) => c[0] === "save_settings")).toBe(true));
+    const saved = (invoke.mock.calls.filter((c) => c[0] === "save_settings").slice(-1)[0] as unknown as [string, { settings: Settings }])[1].settings;
+    expect(saved.shortcuts.snap.left).toBe("Alt+Win+H");
   });
 
   it("saves a hot corner, a toggle and a captured shortcut", async () => {

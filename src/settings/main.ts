@@ -3,7 +3,8 @@
 // dock follows through `settings://changed`.
 import { invoke, on } from "../shared/ipc";
 import { t } from "../shared/i18n";
-import type { DdcMonitor, DetectedGame, HotCornerAction, HotkeyId, HotkeyStatuses, MonitorInfo, Settings } from "../shared/types";
+import { DEFAULT_SNAP } from "../shared/types";
+import type { DdcMonitor, DetectedGame, HotCornerAction, HotkeyId, HotkeyStatuses, MonitorInfo, Settings, SnapKey } from "../shared/types";
 import { hotkeyField, setHotkeyTaken, takenCombos } from "./hotkey";
 import {
   CORNER_ACTIONS,
@@ -238,7 +239,10 @@ function paneSearch(): HTMLElement[] {
   roots.id = "roots"; roots.rows = 3; roots.spellcheck = false;
   roots.value = form.projectRoots; roots.placeholder = s.projectRootsPlaceholder;
   roots.addEventListener("input", () => change({ projectRoots: roots.value }));
-  const hotkey = hotkeyField("hotkey", form.searchHotkey, (v) => change({ searchHotkey: v }));
+  const hotkey = hotkeyField("hotkey", form.searchHotkey, (v) => change({ searchHotkey: v }), {
+    defaultValue: "Alt+Space",
+    conflict: conflictFor(t.settings.shortcuts.searchLabel),
+  });
   queueMicrotask(() => setHotkeyTaken("hotkey", !hotkeyOk));
   return [
     row(s.hotkey, hotkey, "hotkey"),
@@ -256,6 +260,9 @@ const SHORTCUT_STATUS: [string, HotkeyId[]][] = [
   ["sc-overview", ["overview"]],
   ["sc-mic", ["micMute"]],
   ["sc-display", ["displaySwitch"]],
+  ["sc-snap-left", ["snapLeft"]], ["sc-snap-right", ["snapRight"]], ["sc-snap-max", ["snapMax"]],
+  ["sc-snap-center", ["snapCenter"]], ["sc-snap-third1", ["snapThird1"]], ["sc-snap-third2", ["snapThird2"]],
+  ["sc-snap-third3", ["snapThird3"]], ["sc-snap-prevMonitor", ["movePrevMonitor"]], ["sc-snap-nextMonitor", ["moveNextMonitor"]],
   ["sc-snapping", ["snapLeft", "snapRight", "snapMax", "snapCenter", "snapThird1", "snapThird2", "snapThird3", "movePrevMonitor", "moveNextMonitor"]],
 ];
 
@@ -348,29 +355,67 @@ function displaySection(): HTMLElement[] {
   ];
 }
 
+const SNAP_KEYS: SnapKey[] = ["left", "right", "max", "center", "third1", "third2", "third3", "prevMonitor", "nextMonitor"];
+
+/** Every Lucent combo currently set, with its name (the conflict check of the fields). */
+function usedCombos(): [string, string][] {
+  const s = t.settings.shortcuts;
+  const out: [string, string][] = [
+    [s.searchLabel, form.searchHotkey],
+    [s.switcher, form.switcherHotkey],
+    [s.overview, form.overviewHotkey],
+    [s.micMute, form.micMuteHotkey],
+    [s.displaySwitch, form.displaySwitchHotkey],
+  ];
+  // The switcher also owns its Shift variant (backwards).
+  if (form.switcherHotkey && !form.switcherHotkey.split("+").includes("Shift")) {
+    const parts = form.switcherHotkey.split("+");
+    out.push([s.switcher, [...parts.slice(0, -1), "Shift", parts[parts.length - 1]].join("+")]);
+  }
+  if (form.snapping) for (const k of SNAP_KEYS) out.push([s.snap[k], form.snapCombos[k]]);
+  return out.filter(([, c]) => c.trim() !== "");
+}
+
+/** Conflict checker for the field named `self`. */
+function conflictFor(self: string): (combo: string) => string | null {
+  return (combo) => {
+    const c = combo.trim().toLowerCase();
+    const hit = usedCombos().find(([name, v]) => name !== self && v.trim().toLowerCase() === c);
+    return hit ? hit[0] : null;
+  };
+}
+
 function paneShortcuts(): HTMLElement[] {
   const s = t.settings.shortcuts;
-  const field = (id: string, value: string, set: (v: string) => void, help: string, requireAlt = false): HTMLElement => {
-    const wrap = el("div", "field-col");
-    wrap.append(hotkeyField(id, value, set, { allowEmpty: true, requireAlt, requireAltMessage: s.switcherNeedsAlt }), hint(help));
-    return wrap;
-  };
+  const field = (id: string, label: string, value: string, def: string, set: (v: string) => void, requireAlt = false): HTMLElement =>
+    hotkeyField(id, value, set, {
+      allowEmpty: true, requireAlt, requireAltMessage: s.switcherNeedsAlt, defaultValue: def, conflict: conflictFor(label),
+    });
+  const snapRows = form.snapping
+    ? SNAP_KEYS.map((k) =>
+        row(s.snap[k], field(`sc-snap-${k}`, s.snap[k], form.snapCombos[k], DEFAULT_SNAP[k], (v) => change({ snapCombos: { ...form.snapCombos, [k]: v } })), `sc-snap-${k}`),
+      )
+    : [];
   const snapping = el("div", "field-col");
   const snapTaken = el("span", "hotkey-error");
   snapTaken.id = "sc-snapping-taken";
   snapTaken.setAttribute("role", "alert");
-  snapping.append(toggle("sc-snapping", form.snapping, (v) => change({ snapping: v })), hint(s.snappingHint), snapTaken);
+  snapping.append(toggle("sc-snapping", form.snapping, (v) => { change({ snapping: v }); render(); }), hint(s.snappingHint), snapTaken);
   const corners: [keyof typeof s.corners, keyof FormState][] = [
     ["topLeft", "cornerTopLeft"], ["topRight", "cornerTopRight"],
     ["bottomLeft", "cornerBottomLeft"], ["bottomRight", "cornerBottomRight"],
   ];
   queueMicrotask(applyHotkeyStatuses);
   return [
-    row(s.switcher, field("sc-switcher", form.switcherHotkey, (v) => change({ switcherHotkey: v }), `${s.switcherHint} ${s.clearHint}.`, true), "sc-switcher"),
-    row(s.overview, field("sc-overview", form.overviewHotkey, (v) => change({ overviewHotkey: v }), s.clearHint), "sc-overview"),
-    row(s.micMute, field("sc-mic", form.micMuteHotkey, (v) => change({ micMuteHotkey: v }), s.clearHint), "sc-mic"),
-    row(s.displaySwitch, field("sc-display", form.displaySwitchHotkey, (v) => change({ displaySwitchHotkey: v }), s.clearHint), "sc-display"),
+    hint(s.generalHint),
+    row(s.switcher, field("sc-switcher", s.switcher, form.switcherHotkey, "Alt+²", (v) => change({ switcherHotkey: v }), true), "sc-switcher"),
+    hint(s.switcherHint),
+    row(s.overview, field("sc-overview", s.overview, form.overviewHotkey, "Ctrl+Alt+Space", (v) => change({ overviewHotkey: v })), "sc-overview"),
+    row(s.micMute, field("sc-mic", s.micMute, form.micMuteHotkey, "Ctrl+Alt+M", (v) => change({ micMuteHotkey: v })), "sc-mic"),
+    row(s.displaySwitch, field("sc-display", s.displaySwitch, form.displaySwitchHotkey, "Ctrl+Alt+O", (v) => change({ displaySwitchHotkey: v })), "sc-display"),
+    el("h2", "section", s.snapTitle),
     row(s.snapping, snapping, "sc-snapping"),
+    ...snapRows,
     ...displaySection(),
     el("h2", "section", s.cornersTitle),
     ...corners.map(([c, k]) =>

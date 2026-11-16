@@ -301,8 +301,8 @@ pub fn desired(s: &crate::settings::Settings) -> (HotkeyMap, Vec<String>) {
         m.insert(HotkeyId::DisplaySwitch, h);
     }
     if s.shortcuts.snapping {
-        for (id, combo) in SNAP_COMBOS {
-            if let Ok(h) = parse(combo) {
+        for (id, combo) in s.shortcuts.snap.entries() {
+            if let Some(h) = opt(id, combo) {
                 m.insert(id, h);
             }
         }
@@ -879,6 +879,22 @@ mod tests {
         assert_eq!(format(&parse("Ctrl+Alt+Espace").unwrap()), "Ctrl+Alt+Space");
         assert_eq!(format(&Hotkey { mods: MOD_ALT, vk: 0xDE }), "Alt+²");
         assert_eq!(format(&Hotkey { mods: MOD_ALT | MOD_SHIFT, vk: 0x28 }), "Alt+Shift+Down");
+    }
+
+    #[test]
+    fn snap_combos_come_from_the_settings() {
+        let mut s = crate::settings::Settings::default();
+        // Defaults match the historical fixed combos.
+        for (id, combo) in SNAP_COMBOS {
+            assert_eq!(desired(&s).0.get(&id), Some(&parse(combo).unwrap()), "{id:?}");
+        }
+        s.shortcuts.snap.left = "Win+Alt+H".into();
+        s.shortcuts.snap.third2 = String::new();
+        let m = desired(&s).0;
+        assert_eq!(m.get(&HotkeyId::SnapLeft), Some(&parse("Win+Alt+H").unwrap()));
+        assert!(!m.contains_key(&HotkeyId::SnapThird2));
+        s.shortcuts.snapping = false;
+        assert!(!desired(&s).0.contains_key(&HotkeyId::SnapLeft));
     }
 
     #[test]

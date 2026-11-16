@@ -112,6 +112,8 @@ export interface Commands {
   /** Shared monitor input: `toOther` absent = toggle. Answer: `display://switched`. */
   display_switch: { args: { toOther?: boolean | null }; result: void };
   list_ddc_monitors: { args: Record<string, never>; result: DdcMonitor[] };
+  /** A shortcut field records: release every global hotkey (true) / put them back. */
+  hotkeys_pause: { args: { paused: boolean }; result: void };
   power_action: { args: { action: "lock" | "sleep" | "signout" | "restart" | "shutdown" }; result: void };
   /** Re-reads radios / theme / brightness (monitor under the cursor) and emits `cc://state`. */
   cc_refresh: { args: Record<string, never>; result: void };

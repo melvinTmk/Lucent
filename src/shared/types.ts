@@ -108,7 +108,18 @@ export interface ShortcutSettings {
   micMute: string;
   /** Shared monitor: this PC ⇄ the other one. Default "Ctrl+Alt+O". */
   displaySwitch: string;
+  /** Window snapping combos, used while `snapping` is on ("" disables one). */
+  snap: SnapShortcuts;
 }
+
+export type SnapKey = "left" | "right" | "max" | "center" | "third1" | "third2" | "third3" | "prevMonitor" | "nextMonitor";
+export type SnapShortcuts = Record<SnapKey, string>;
+
+export const DEFAULT_SNAP: SnapShortcuts = {
+  left: "Ctrl+Alt+Left", right: "Ctrl+Alt+Right", max: "Ctrl+Alt+Up", center: "Ctrl+Alt+Down",
+  third1: "Ctrl+Alt+D", third2: "Ctrl+Alt+F", third3: "Ctrl+Alt+G",
+  prevMonitor: "Ctrl+Alt+Shift+Left", nextMonitor: "Ctrl+Alt+Shift+Right",
+};
 
 export type HotCornerAction = "none" | "overview" | "desktop" | "lock" | "search" | "switcher";
 

@@ -105,11 +105,38 @@ select {
 textarea.text { resize: vertical; min-height: 54px; }
 .text:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .hotkey { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.hotkey input {
-  box-sizing: border-box; width: 160px; padding: 5px 8px; font: inherit; color: inherit; text-align: center;
-  background: var(--card); border: 1px solid var(--sep); border-radius: 6px; caret-color: transparent;
+.hk-row { position: relative; display: flex; align-items: center; gap: 6px; }
+.hk-caps {
+  display: flex; align-items: center; gap: 4px; min-width: 150px; min-height: 30px; padding: 3px 8px;
+  justify-content: flex-end; border-radius: 9px; cursor: pointer;
+  background: color-mix(in srgb, var(--ink, #888) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink, #888) 14%, transparent);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
 }
-.hotkey input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hk-caps:hover { border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+.hk-caps kbd {
+  font: 600 12px/1 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  min-width: 14px; text-align: center; padding: 5px 7px; border-radius: 6px;
+  background: color-mix(in srgb, var(--ink, #888) 10%, Canvas);
+  border: 1px solid color-mix(in srgb, var(--ink, #888) 22%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink, #888) 28%, transparent);
+}
+.hk-placeholder { font-size: 12px; opacity: 0.6; }
+.hotkey.recording .hk-caps {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  animation: hk-pulse 1.2s ease-in-out infinite;
+}
+.hotkey.recording .hk-placeholder { color: var(--accent); opacity: 1; }
+@keyframes hk-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 12%, transparent); } }
+/* Keyboard target kept for focus and screen readers, under the keycaps. */
+.hk-input { position: absolute; inset: 0; width: 100%; opacity: 0; pointer-events: none; }
+.hk-btn {
+  all: unset; width: 24px; height: 24px; border-radius: 6px; text-align: center; line-height: 24px;
+  font-size: 14px; cursor: pointer; opacity: 0.55;
+}
+.hk-btn:hover { opacity: 1; background: color-mix(in srgb, var(--ink, #888) 10%, transparent); }
+.hk-btn[hidden] { display: none; }
 .hotkey-error { max-width: 260px; font-size: 11px; color: #d33; text-align: right; }
 .hotkey-error:empty { display: none; }
 .colors { display: flex; align-items: center; gap: 8px; }

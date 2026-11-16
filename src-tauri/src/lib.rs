@@ -574,6 +574,32 @@ fn emit_hotkey_status(app: &AppHandle) {
 }
 
 /// Registers the wanted combos, logs refusals (never fatal) and broadcasts the statuses.
+/// Bumped on every pause / resume: a stale safety timer must not resume a newer pause.
+static HOTKEY_PAUSE_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Réglages › a shortcut field is recording: every global hotkey is released so the
+/// combination reaches the page (a registered one would fire instead, e.g. Alt+Espace
+/// opening the search). `false` puts the configured ones back. A pause never outlives
+/// 20 s (the page may close mid-capture).
+#[tauri::command]
+fn hotkeys_pause(app: AppHandle, paused: bool) {
+    use std::sync::atomic::Ordering;
+    let generation = HOTKEY_PAUSE_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    if !paused {
+        let (map, _) = hotkey::desired(&app.state::<SettingsStore>().get());
+        apply_hotkeys(&app, map);
+        return;
+    }
+    apply_hotkeys(&app, hotkey::HotkeyMap::new());
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(20));
+        if HOTKEY_PAUSE_GEN.load(Ordering::SeqCst) == generation {
+            let (map, _) = hotkey::desired(&app.state::<SettingsStore>().get());
+            apply_hotkeys(&app, map);
+        }
+    });
+}
+
 fn apply_hotkeys(app: &AppHandle, map: hotkey::HotkeyMap) {
     if let Err(e) = hotkey::set_all(map) {
         eprintln!("lucent: {e}");
@@ -1225,7 +1251,8 @@ pub fn run() {
             overview::overview_ready,
             mic_toggle,
             display_switch,
-            list_ddc_monitors
+            list_ddc_monitors,
+            hotkeys_pause
         ])
         .build(tauri::generate_context!());
     let app = match app {

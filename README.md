@@ -49,6 +49,8 @@ way while you play.
 - Window overview, Mission Control style (`Ctrl+Alt+Space`).
 - Snapping: `Ctrl+Alt+←/→` halves, `↑` maximize, `↓` center, `D/F/G` thirds,
   `+Shift+←/→` move to the next monitor.
+- **Every shortcut is yours**: Réglages → Raccourcis, click a shortcut and press the new
+  keys (conflicts are flagged, ↺ restores the default).
 - Hot corners (overview, desktop, lock, search, switcher).
 
 **Control center** (click the clock)

@@ -47,6 +47,8 @@ fenêtres, un centre de contrôle et un Mode Jeu qui se fait oublier quand tu jo
 - Vue de toutes les fenêtres façon Mission Control (`Ctrl+Alt+Espace`).
 - Ancrage : `Ctrl+Alt+←/→` moitiés, `↑` agrandir, `↓` centrer, `D/F/G` tiers,
   `+Maj+←/→` écran voisin.
+- **Tous les raccourcis se changent** : Réglages → Raccourcis, clique sur un raccourci et
+  appuie sur les nouvelles touches (doublons signalés, ↺ remet la valeur par défaut).
 - Coins actifs (vue des fenêtres, bureau, verrouiller, recherche, sélecteur).
 
 **Centre de contrôle** (clic sur l'horloge)

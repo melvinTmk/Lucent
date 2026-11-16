@@ -19,7 +19,7 @@ export const baseSettings: Settings = {
   },
   gameMode: { enabled: true, include: [], exclude: [], powerPlan: true, monitorPill: true, pingTarget: "1.1.1.1" },
   valorant: { riotId: "", region: "eu", apiKey: "", postMatch: true, pinCard: false },
-  shortcuts: { switcher: "Alt+²", overview: "Ctrl+Alt+Space", snapping: true, micMute: "Ctrl+Alt+M", displaySwitch: "Ctrl+Alt+O" },
+  shortcuts: { switcher: "Alt+²", overview: "Ctrl+Alt+Space", snapping: true, micMute: "Ctrl+Alt+M", displaySwitch: "Ctrl+Alt+O", snap: { left: "Ctrl+Alt+Left", right: "Ctrl+Alt+Right", max: "Ctrl+Alt+Up", center: "Ctrl+Alt+Down", third1: "Ctrl+Alt+D", third2: "Ctrl+Alt+F", third3: "Ctrl+Alt+G", prevMonitor: "Ctrl+Alt+Shift+Left", nextMonitor: "Ctrl+Alt+Shift+Right" } },
   hotCorners: { topLeft: "overview", topRight: "none", bottomLeft: "none", bottomRight: "none" },
   controlCenter: true,
   quickLook: true,

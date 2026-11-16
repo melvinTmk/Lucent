@@ -7,7 +7,7 @@ describe("M6 settings round-trip", () => {
   it("keeps shortcuts, hot corners and feature toggles through the form", () => {
     const s: Settings = {
       ...baseSettings,
-      shortcuts: { switcher: "", overview: "Ctrl+Alt+Space", snapping: false, micMute: "Ctrl+Alt+M", displaySwitch: "Ctrl+Alt+O" },
+      shortcuts: { switcher: "", overview: "Ctrl+Alt+Space", snapping: false, micMute: "Ctrl+Alt+M", displaySwitch: "Ctrl+Alt+O", snap: { left: "Ctrl+Alt+Left", right: "Ctrl+Alt+Right", max: "Ctrl+Alt+Up", center: "Ctrl+Alt+Down", third1: "Ctrl+Alt+D", third2: "Ctrl+Alt+F", third3: "Ctrl+Alt+G", prevMonitor: "Ctrl+Alt+Shift+Left", nextMonitor: "Ctrl+Alt+Shift+Right" } },
       hotCorners: { topLeft: "none", topRight: "lock", bottomLeft: "desktop", bottomRight: "search" },
       controlCenter: false,
       quickLook: false,

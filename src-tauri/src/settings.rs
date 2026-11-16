@@ -60,6 +60,57 @@ pub struct ShortcutSettings {
     pub mic_mute: String,
     /// Shared monitor: this PC ⇄ the other PC.
     pub display_switch: String,
+    /// Window snapping combos (used while `snapping` is on; "" disables one).
+    pub snap: SnapShortcuts,
+}
+
+/// One combo per snapping action. Defaults: `hotkey::SNAP_COMBOS`.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(default, rename_all = "camelCase")]
+pub struct SnapShortcuts {
+    pub left: String,
+    pub right: String,
+    pub max: String,
+    pub center: String,
+    pub third1: String,
+    pub third2: String,
+    pub third3: String,
+    pub prev_monitor: String,
+    pub next_monitor: String,
+}
+
+impl Default for SnapShortcuts {
+    fn default() -> Self {
+        Self {
+            left: "Ctrl+Alt+Left".into(),
+            right: "Ctrl+Alt+Right".into(),
+            max: "Ctrl+Alt+Up".into(),
+            center: "Ctrl+Alt+Down".into(),
+            third1: "Ctrl+Alt+D".into(),
+            third2: "Ctrl+Alt+F".into(),
+            third3: "Ctrl+Alt+G".into(),
+            prev_monitor: "Ctrl+Alt+Shift+Left".into(),
+            next_monitor: "Ctrl+Alt+Shift+Right".into(),
+        }
+    }
+}
+
+impl SnapShortcuts {
+    /// (hotkey id, combo) for every snapping action.
+    pub fn entries(&self) -> [(crate::hotkey::HotkeyId, &str); 9] {
+        use crate::hotkey::HotkeyId::*;
+        [
+            (SnapLeft, &self.left),
+            (SnapRight, &self.right),
+            (SnapMax, &self.max),
+            (SnapCenter, &self.center),
+            (SnapThird1, &self.third1),
+            (SnapThird2, &self.third2),
+            (SnapThird3, &self.third3),
+            (MovePrevMonitor, &self.prev_monitor),
+            (MoveNextMonitor, &self.next_monitor),
+        ]
+    }
 }
 
 impl Default for ShortcutSettings {
@@ -70,6 +121,7 @@ impl Default for ShortcutSettings {
             snapping: true,
             mic_mute: "Ctrl+Alt+M".into(),
             display_switch: "Ctrl+Alt+O".into(),
+            snap: SnapShortcuts::default(),
         }
     }
 }
@@ -428,7 +480,9 @@ impl SettingsStore {
     pub fn apply(&self, s: Settings) -> Result<Settings, String> {
         crate::hotkey::parse(&s.search.hotkey)
             .map_err(|e| format!("raccourci de recherche invalide : {e}"))?;
-        for combo in [&s.shortcuts.switcher, &s.shortcuts.overview, &s.shortcuts.mic_mute, &s.shortcuts.display_switch] {
+        let snap = s.shortcuts.snap.entries().map(|(_, c)| c.to_string());
+        let main = [&s.shortcuts.switcher, &s.shortcuts.overview, &s.shortcuts.mic_mute, &s.shortcuts.display_switch];
+        for combo in main.into_iter().chain(snap.iter()) {
             if !combo.trim().is_empty() {
                 crate::hotkey::parse(combo).map_err(|e| format!("raccourci invalide « {combo} » : {e}"))?;
             }

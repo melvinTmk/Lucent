@@ -1,7 +1,8 @@
 name: Release
 
 # Push a tag like v0.2.0 (matching the version in src-tauri/tauri.conf.json):
-# builds the NSIS installer and publishes it as a GitHub release.
+# builds the NSIS installer and publishes it as a GitHub release, with the signed
+# latest.json that installed copies poll for updates.
 on:
   push:
     tags: ['v*']
@@ -26,8 +27,13 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the installer and latest.json for the in-app updater (key only in secrets).
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Lucent ${{ github.ref_name }}
           releaseBody: See the changes below. Download the `_x64-setup.exe` installer.
           releaseDraft: false
+          # latest.json, read by installed copies to find this release.
+          uploadUpdaterJson: true

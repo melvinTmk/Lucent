@@ -156,6 +156,8 @@ textarea.text { resize: vertical; min-height: 54px; }
 .btn:hover { background: var(--track); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn:disabled { opacity: 0.5; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.1); }
 
 .btn-remove {
   all: unset; display: flex; align-items: center; justify-content: center;

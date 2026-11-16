@@ -34,6 +34,7 @@ pub mod overview;
 pub mod snap;
 pub mod corners;
 pub mod power_menu;
+pub mod updates;
 
 use settings::{Settings, SettingsStore};
 use std::sync::Arc;
@@ -1007,7 +1008,7 @@ fn wait_for_shell() {
 /// native glass (Windows.UI.Composition, DispatcherQueue on the main thread) and WebView2
 /// released while the process unloads is where CoreMessaging fail-fasts (0xE0464645)
 /// were seen. Everything persistent (settings, history) is already saved when it changes.
-fn exit_now(code: i32) -> ! {
+pub(crate) fn exit_now(code: i32) -> ! {
     #[cfg(windows)]
     taskbar_glue::restore_for_exit();
     diag::event(format!("exit ({code})"));
@@ -1043,7 +1044,9 @@ pub fn run() {
         wait_for_shell();
     }
 
-    let app = valorant::assets::register_protocol(search::quicklook::register_protocol(icons::register_protocol(tauri::Builder::default())))
+    let app = valorant::assets::register_protocol(search::quicklook::register_protocol(icons::register_protocol(
+        tauri::Builder::default().plugin(tauri_plugin_updater::Builder::new().build()),
+    )))
         .setup(|app| {
             let path = settings::settings_path();
             let s = migrate_packaged_pins(settings::load_from(&path), &path);
@@ -1189,9 +1192,14 @@ pub fn run() {
                     system::display_input::win::switch(s, None);
                 });
             }
+            updates::start(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            updates::update_status,
+            updates::update_check,
+            updates::update_install,
+            updates::update_dismiss,
             get_settings,
             save_settings,
             report_dock_layout,

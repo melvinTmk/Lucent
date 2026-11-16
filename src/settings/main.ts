@@ -4,7 +4,7 @@
 import { invoke, on } from "../shared/ipc";
 import { t } from "../shared/i18n";
 import { DEFAULT_SNAP } from "../shared/types";
-import type { DdcMonitor, DetectedGame, HotCornerAction, HotkeyId, HotkeyStatuses, MonitorInfo, Settings, SnapKey } from "../shared/types";
+import type { DdcMonitor, DetectedGame, HotCornerAction, HotkeyId, HotkeyStatuses, MonitorInfo, Settings, SnapKey, UpdateStatus } from "../shared/types";
 import { hotkeyField, setHotkeyTaken, takenCombos } from "./hotkey";
 import {
   CORNER_ACTIONS,
@@ -668,6 +668,62 @@ function paneValorant(): HTMLElement[] {
   ];
 }
 
+/** Last `update://state` (null until the first `update_status`). */
+let updateState: UpdateStatus | null = null;
+
+/** Status line and button of the « Version » row. */
+export function updateLine(st: UpdateStatus): { text: string; button: "check" | "install" | null } {
+  const s = t.settings;
+  switch (st.phase) {
+    case "checking":
+      return { text: s.updateChecking, button: null };
+    case "upToDate":
+      return { text: s.updateUpToDate, button: "check" };
+    case "available":
+      return { text: s.updateAvailable(st.version ?? ""), button: "install" };
+    case "downloading":
+      return { text: s.updateDownloading(st.progress), button: null };
+    case "installing":
+      return { text: s.updateInstalling, button: null };
+    case "failed":
+      return { text: s.updateFailed(st.error ?? "?"), button: st.version ? "install" : "check" };
+    default:
+      return { text: "", button: "check" };
+  }
+}
+
+function fillUpdateRow(wrap: HTMLElement): void {
+  const s = t.settings;
+  const st = updateState;
+  wrap.replaceChildren();
+  const line = st ? updateLine(st) : { text: "", button: "check" as const };
+  if (line.button) {
+    const b = el("button", line.button === "install" ? "btn primary" : "btn", line.button === "install" ? s.updateInstall : s.checkNow);
+    b.type = "button";
+    b.id = "update-btn";
+    b.addEventListener("click", () => {
+      if (line.button === "install") {
+        saver.flush();
+        void invoke("update_install");
+      } else {
+        void invoke("update_check").then((r) => {
+          updateState = r;
+          refreshUpdateRow();
+        });
+      }
+    });
+    wrap.append(b);
+  }
+  const status = el("span", "test-status", line.text);
+  status.id = "update-status";
+  wrap.append(status);
+}
+
+function refreshUpdateRow(): void {
+  const wrap = root.querySelector<HTMLElement>("#update-row");
+  if (wrap) fillUpdateRow(wrap);
+}
+
 function paneGeneral(): HTMLElement[] {
   const s = t.settings;
   const lang = el("select");
@@ -675,10 +731,16 @@ function paneGeneral(): HTMLElement[] {
   lang.append(new Option(s.languages.fr, "fr"));
   lang.value = "fr";
   lang.addEventListener("change", () => change({ language: lang.value }));
+  const updateWrap = el("div", "test-row");
+  updateWrap.id = "update-row";
+  fillUpdateRow(updateWrap);
   return [
     row(s.launchAtStartup, toggle("startup", form.launchAtStartup, (v) => change({ launchAtStartup: v })), "startup"),
     row(s.hideTaskbar, toggle("taskbar", form.hideWindowsTaskbar, (v) => change({ hideWindowsTaskbar: v })), "taskbar"),
     row(s.language, lang, "lang"),
+    row(s.checkUpdates, toggle("check-updates", form.checkUpdates, (v) => change({ checkUpdates: v })), "check-updates"),
+    hint(s.checkUpdatesHint),
+    row(s.version(updateState?.current ?? ""), updateWrap),
     row(s.quitHint, quitButton()),
   ];
 }
@@ -753,6 +815,15 @@ async function boot(): Promise<void> {
   } catch (e) {
     console.error("get_hotkey_statuses failed", e);
   }
+  try {
+    updateState = await invoke("update_status");
+  } catch (e) {
+    console.error("update_status failed", e);
+  }
+  await on("update://state", (st) => {
+    updateState = st;
+    refreshUpdateRow();
+  });
   document.title = t.settings.title;
   render();
   await on("settings://changed", (s) => {

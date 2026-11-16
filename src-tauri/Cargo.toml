@@ -1,6 +1,6 @@
 [package]
 name = "lucent"
-version = "0.2.0"
+version = "0.3.0"
 description = "Lucent - macOS-style dock for Windows"
 authors = []
 license = "GPL-3.0-or-later"
@@ -24,6 +24,7 @@ nucleo-matcher = "=0.3.1"
 base64 = "=0.22.1"
 ureq = { version = "=2.12.1", features = ["json"] }
 getrandom = "=0.3.4"
+tauri-plugin-updater = "=2.14.1"
 
 [target.'cfg(windows)'.dependencies]
 windows-core = "=0.62.2"

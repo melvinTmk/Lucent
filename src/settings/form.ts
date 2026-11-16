@@ -28,6 +28,7 @@ export interface FormState {
   reduceMotion: boolean;
   launchAtStartup: boolean;
   hideWindowsTaskbar: boolean;
+  checkUpdates: boolean;
   language: string;
   searchHotkey: string;
   /** One folder per line (the model stores a list). */
@@ -94,6 +95,7 @@ export function settings_to_form(s: Settings): FormState {
     reduceMotion: s.animations.reduceMotion,
     launchAtStartup: s.general.launchAtStartup,
     hideWindowsTaskbar: s.general.hideWindowsTaskbar,
+    checkUpdates: s.general.checkUpdates,
     language: s.general.language,
     searchHotkey: s.search.hotkey,
     projectRoots: s.search.projectRoots.join("\n"),
@@ -163,6 +165,7 @@ export function form_to_settings(form: FormState, base: Settings): Settings {
       ...base.general,
       launchAtStartup: form.launchAtStartup,
       hideWindowsTaskbar: form.hideWindowsTaskbar,
+      checkUpdates: form.checkUpdates,
       language: form.language,
     },
     search: {

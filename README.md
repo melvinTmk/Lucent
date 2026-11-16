@@ -77,6 +77,9 @@ way while you play.
 **Reliability**
 - Relaunches itself after a crash, waits for the shell at sign-in, writes a log to
   `%LOCALAPPDATA%\Lucent\logs\lucent.log`.
+- **Updates**: checks GitHub for a new version (at startup, then every 6 hours) and
+  offers to install it from the dock. Updates are signed: a file without the right
+  signature is refused. Can be turned off in Settings → General.
 
 ## Install
 
@@ -97,6 +100,8 @@ settings.
 ## Privacy
 
 Lucent has no telemetry and no account. It only goes online for features you turn on:
+
+- Updates: `github.com` (Lucent's releases page; can be turned off).
 
 - Valorant: `api.henrikdev.xyz` (your Riot ID and your own API key) and
   `valorant-api.com` (map, agent and rank pictures).

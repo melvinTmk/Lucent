@@ -6,7 +6,8 @@ const { invoke } = vi.hoisted(() => ({
 }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
 
-import { disposeCard, renderCard, type CardViewState } from "./card";
+import { disposeCard, renderCard, updateCardShown, type CardViewState } from "./card";
+import type { UpdateStatus } from "../shared/types";
 
 describe("card component", () => {
   beforeEach(() => {
@@ -39,6 +40,7 @@ describe("card component", () => {
 
     vi.advanceTimersByTime(1);
     expect(onDismiss).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
   });
 
   it("renders a loss match card with loss class", () => {
@@ -226,5 +228,47 @@ describe("card component", () => {
     expect(el.classList.contains("valo")).toBe(false);
     expect(el.querySelector(".vc-bg")).toBeNull();
     expect(el.textContent).toBe("DÉFAITE 8-13");
+  });
+});
+
+describe("update card", () => {
+  const st = (over: Partial<UpdateStatus>): UpdateStatus => ({
+    phase: "available", current: "0.3.0", version: "0.4.0", progress: null, error: null, dismissed: false, ...over,
+  });
+
+  it("is shown for a found version until « Plus tard », and while installing", () => {
+    expect(updateCardShown(null)).toBe(false);
+    expect(updateCardShown(st({}))).toBe(true);
+    expect(updateCardShown(st({ dismissed: true }))).toBe(false);
+    expect(updateCardShown(st({ phase: "upToDate", version: null }))).toBe(false);
+    expect(updateCardShown(st({ phase: "checking" }))).toBe(false);
+    expect(updateCardShown(st({ phase: "downloading", progress: 10, dismissed: true }))).toBe(true);
+    expect(updateCardShown(st({ phase: "failed", error: "x" }))).toBe(true);
+    expect(updateCardShown(st({ phase: "failed", version: null, error: "offline" }))).toBe(false);
+  });
+
+  it("installs or postpones from the buttons", () => {
+    vi.useFakeTimers();
+    const el = document.createElement("div");
+    const onDismiss = vi.fn();
+    renderCard(el, { kind: "update", status: st({}) }, { onDismiss });
+    expect(el.textContent).toContain("Lucent 0.4.0 est disponible");
+    const [go, later] = Array.from(el.querySelectorAll<HTMLButtonElement>("button"));
+    go.click();
+    expect(invoke).toHaveBeenCalledWith("update_install", undefined);
+    later.click();
+    expect(invoke).toHaveBeenCalledWith("update_dismiss", undefined);
+    expect(onDismiss).toHaveBeenCalled();
+    // No timer: the card waits for an answer.
+    vi.advanceTimersByTime(60_000);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the download progress without buttons", () => {
+    const el = document.createElement("div");
+    renderCard(el, { kind: "update", status: st({ phase: "downloading", progress: 42 }) });
+    expect(el.textContent).toContain("42 %");
+    expect(el.querySelector("button")).toBeNull();
+    expect(el.querySelector<HTMLElement>(".update-fill")!.style.width).toBe("42%");
   });
 });

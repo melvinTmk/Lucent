@@ -243,6 +243,8 @@ pub struct GeneralSettings {
     pub launch_at_startup: bool,
     pub hide_windows_taskbar: bool,
     pub language: String,
+    /// Look for a new version on GitHub (at startup, then every few hours).
+    pub check_updates: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -379,7 +381,7 @@ impl Default for AnimationSettings {
 
 impl Default for GeneralSettings {
     fn default() -> Self {
-        Self { launch_at_startup: true, hide_windows_taskbar: true, language: "fr".into() }
+        Self { launch_at_startup: true, hide_windows_taskbar: true, language: "fr".into(), check_updates: true }
     }
 }
 

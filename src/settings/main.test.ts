@@ -26,6 +26,12 @@ const { invoke, listen } = vi.hoisted(() => ({
       ];
     }
     if (cmd === "valo_test") return "Platine 2 - 45 RR";
+    if (cmd === "update_status") {
+      return { phase: "idle", current: "0.3.0", version: null, progress: null, error: null, dismissed: false };
+    }
+    if (cmd === "update_check") {
+      return { phase: "available", current: "0.3.0", version: "0.4.0", progress: null, error: null, dismissed: false };
+    }
     return undefined;
   }),
   listen: vi.fn(async () => () => {}),
@@ -306,5 +312,19 @@ describe("settings UI and tabs", () => {
       const status = document.querySelector("#valo-test-status")!;
       expect(status.textContent).toBe("Platine 2 - 45 RR");
     });
+  });
+
+  it("Général: version, automatic checks toggle, check then install", async () => {
+    await import("./main");
+    await vi.waitFor(() => expect(document.querySelectorAll(".tab").length).toBe(7));
+    Array.from(document.querySelectorAll<HTMLButtonElement>(".tab")).find((t) => t.textContent === "Général")!.click();
+    await vi.waitFor(() => expect(document.querySelector("#update-btn")).not.toBeNull());
+    expect(document.querySelector<HTMLInputElement>("#check-updates")!.checked).toBe(true);
+    expect(document.body.textContent).toContain("Version 0.3.0");
+    document.querySelector<HTMLButtonElement>("#update-btn")!.click();
+    expect(invoke).toHaveBeenCalledWith("update_check", undefined);
+    await vi.waitFor(() => expect(document.querySelector("#update-status")!.textContent).toContain("Lucent 0.4.0 est disponible"));
+    document.querySelector<HTMLButtonElement>("#update-btn")!.click();
+    expect(invoke).toHaveBeenCalledWith("update_install", undefined);
   });
 });

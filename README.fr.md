@@ -76,6 +76,10 @@ fenêtres, un centre de contrôle et un Mode Jeu qui se fait oublier quand tu jo
 **Fiabilité**
 - Se relance tout seul après un plantage, attend que Windows soit prêt à l'ouverture de
   session, tient un journal dans `%LOCALAPPDATA%\Lucent\logs\lucent.log`.
+- **Mises à jour** : Lucent regarde sur GitHub s'il existe une nouvelle version (au
+  démarrage puis toutes les 6 heures) et propose de l'installer depuis le dock. Les
+  mises à jour sont signées : un fichier sans la bonne signature est refusé. Se désactive
+  dans Réglages → Général.
 
 ## Installation
 
@@ -98,6 +102,8 @@ automatiquement la barre des tâches » dans les paramètres Windows.
 
 Pas de télémétrie, pas de compte. Lucent ne se connecte à Internet que pour les
 fonctions que tu actives :
+
+- Mises à jour : `github.com` (la page des versions de Lucent ; désactivable).
 
 - Valorant : `api.henrikdev.xyz` (ton Riot ID et ta propre clé API) et `valorant-api.com`
   (images des maps, agents et rangs).

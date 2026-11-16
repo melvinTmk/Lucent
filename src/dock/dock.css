@@ -1636,6 +1636,23 @@ body[data-reduce-motion] .cc-panel > * {
 .island.card.display-switch.failed {
   color: #ff4757;
 }
+.island.card.update.failed .card-prompt {
+  color: #ff4757;
+}
+.update-bar {
+  display: block;
+  width: 90px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sep);
+  overflow: hidden;
+}
+.update-fill {
+  display: block;
+  height: 100%;
+  background: rgba(43, 92, 255, 0.9);
+  transition: width 0.2s ease;
+}
 .island.card.mic.muted {
   color: #ff3b30;
 }

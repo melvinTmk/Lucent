@@ -45,6 +45,21 @@ export interface GeneralSettings {
   launchAtStartup: boolean;
   hideWindowsTaskbar: boolean;
   language: string;
+  /** Look for a new version on GitHub (startup, then every few hours). */
+  checkUpdates: boolean;
+}
+
+export type UpdatePhase = "idle" | "checking" | "upToDate" | "available" | "downloading" | "installing" | "failed";
+
+/** `update://state` and the `update_*` commands. */
+export interface UpdateStatus {
+  phase: UpdatePhase;
+  current: string;
+  version: string | null;
+  progress: number | null;
+  error: string | null;
+  /** « Plus tard » on the dock card (holds for this version). */
+  dismissed: boolean;
 }
 
 export interface SearchSettings {

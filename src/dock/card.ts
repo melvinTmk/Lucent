@@ -1,6 +1,6 @@
 import { invoke } from "../shared/ipc";
 import { t } from "../shared/i18n";
-import type { ValoMatchCard } from "../shared/types";
+import type { UpdateStatus, ValoMatchCard } from "../shared/types";
 
 /** The mic card (after a mic mute toggle) stays this long, whatever the card setting. */
 export const MIC_CARD_MS = 1500;
@@ -11,7 +11,17 @@ export type CardViewState =
   | ({ kind: "match" } & ValoMatchCard)
   | { kind: "ask"; exe: string; name: string }
   | { kind: "mic"; muted: boolean }
-  | { kind: "display"; text: string; ok: boolean };
+  | { kind: "display"; text: string; ok: boolean }
+  | { kind: "update"; status: UpdateStatus };
+
+/** The dock shows the update card for a found version (unless « Plus tard »), while it
+ *  downloads/installs, and after a failed install. */
+export function updateCardShown(st: UpdateStatus | null): boolean {
+  if (!st) return false;
+  if (st.phase === "downloading" || st.phase === "installing") return true;
+  if (st.dismissed || !st.version) return false;
+  return st.phase === "available" || st.phase === "failed";
+}
 
 export interface CardOptions {
   durationMs?: number;
@@ -73,6 +83,8 @@ export function renderCard(
       dismissTimer = null;
       options?.onDismiss?.();
     }, MIC_CARD_MS);
+  } else if (state.kind === "update") {
+    renderUpdateCard(el, state.status, options);
   } else if (state.kind === "ask") {
     el.classList.add("ask");
     el.innerHTML = "";
@@ -102,6 +114,50 @@ export function renderCard(
     };
     el.appendChild(noBtn);
   }
+}
+
+// ---------- Update card ----------
+
+function renderUpdateCard(el: HTMLElement, st: UpdateStatus, options?: CardOptions): void {
+  el.classList.add("ask", "update");
+  el.replaceChildren();
+  const u = t.update;
+  const busy = st.phase === "downloading" || st.phase === "installing";
+  const failed = st.phase === "failed";
+  const text = busy
+    ? st.phase === "downloading" ? u.downloading(st.progress) : u.installing
+    : failed ? u.failed : u.available(st.version ?? "");
+  const prompt = document.createElement("span");
+  prompt.className = "card-prompt";
+  prompt.textContent = text;
+  el.classList.toggle("failed", failed);
+  el.appendChild(prompt);
+  if (busy) {
+    if (st.phase === "downloading" && st.progress !== null) {
+      const bar = document.createElement("span");
+      bar.className = "update-bar";
+      const fill = document.createElement("span");
+      fill.className = "update-fill";
+      fill.style.width = `${st.progress}%`;
+      bar.appendChild(fill);
+      el.appendChild(bar);
+    }
+    return;
+  }
+  const go = document.createElement("button");
+  go.type = "button";
+  go.className = "card-btn primary";
+  go.textContent = failed ? u.retry : u.install;
+  go.onclick = () => void invoke("update_install");
+  const later = document.createElement("button");
+  later.type = "button";
+  later.className = "card-btn";
+  later.textContent = u.later;
+  later.onclick = () => {
+    void invoke("update_dismiss");
+    options?.onDismiss?.();
+  };
+  el.append(go, later);
 }
 
 // ---------- Valorant post-match card ----------

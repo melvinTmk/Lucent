@@ -25,7 +25,7 @@ function settings(showMedia = true): Settings {
       showClock: true, showMedia, alwaysVisible: false,
     },
     animations: { speed: 1, style: "spring", cardDurationMs: 4000, reduceMotion: false },
-    general: { launchAtStartup: true, hideWindowsTaskbar: true, language: "fr" },
+    general: { launchAtStartup: true, hideWindowsTaskbar: true, language: "fr", checkUpdates: true },
     search: { hotkey: "Alt+Space", projectRoots: [], wslDistro: "", clipboardHistory: true, webUrl: "", textColor: "" },
     gameMode: { enabled: true, include: [], exclude: [], powerPlan: true, monitorPill: true, pingTarget: "1.1.1.1" },
     valorant: { riotId: "", region: "eu", apiKey: "", postMatch: true, pinCard: false },

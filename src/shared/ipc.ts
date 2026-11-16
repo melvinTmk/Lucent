@@ -32,7 +32,7 @@ import type {
   TrashStatus,
   StackFile,
   ValoMatchCard,
-  VolumeState, DdcMonitor } from "./types";
+  VolumeState, DdcMonitor, UpdateStatus } from "./types";
 
 /** Front -> Rust commands: args and result. Later tasks add their own entries. */
 export interface Commands {
@@ -73,6 +73,13 @@ export interface Commands {
   list_monitors: { args: Record<string, never>; result: MonitorInfo[] };
   /** Quits Lucent (the taskbar is restored on exit). */
   quit_app: { args: Record<string, never>; result: void };
+  update_status: { args: Record<string, never>; result: UpdateStatus };
+  /** Checks GitHub now (Réglages « Rechercher maintenant »). */
+  update_check: { args: Record<string, never>; result: UpdateStatus };
+  /** Downloads and installs the found version; Lucent restarts on success. */
+  update_install: { args: Record<string, never>; result: void };
+  /** « Plus tard » on the dock card. */
+  update_dismiss: { args: Record<string, never>; result: void };
   get_hotkey_status: { args: Record<string, never>; result: HotkeyStatus };
   /** The thumbnails page is loaded and listening (first request waits for it). */
   thumbs_ready: { args: Record<string, never>; result: void };
@@ -175,6 +182,7 @@ export interface Events {
   "audio://devices": AudioDevices;
   "cc://state": ControlCenterState;
   "display://switched": { text: string; ok: boolean };
+  "update://state": UpdateStatus;
 }
 
 export function invoke<K extends keyof Commands>(

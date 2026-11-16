@@ -2,9 +2,9 @@
 // slides on `dock://reveal`, and reports its layout so Rust sizes the window and clips
 // it (and the Acrylic) to the islands.
 import { invoke, on, onFileDrag, onWindow } from "../shared/ipc";
-import type { AudioDevices, ControlCenterState, DockItem, GameState, GlassTone, MediaState, Rect, Settings, SysStats, SystemState, TrashStatus, TrayIconView } from "../shared/types";
+import type { AudioDevices, ControlCenterState, DockItem, GameState, GlassTone, MediaState, Rect, Settings, SysStats, SystemState, TrashStatus, TrayIconView, UpdateStatus } from "../shared/types";
 import { iconScale, maxRowGrowth } from "./magnify";
-import { VALO_PORTRAIT_OVERFLOW, type CardViewState } from "./card";
+import { VALO_PORTRAIT_OVERFLOW, updateCardShown, type CardViewState } from "./card";
 import { showPill } from "./pill";
 import { renderDock } from "./render";
 import { hitItem, SPRING_IDLE, stepSpring, type SpringState } from "./drop";
@@ -62,8 +62,15 @@ function pinOn(): boolean {
   return !!settings?.valorant?.postMatch && !!settings?.valorant?.pinCard;
 }
 
-/** The temporary card (mic, game prompt, fresh match) wins; else the pinned last match. */
+/** Last `update://state`. */
+let update: UpdateStatus | null = null;
+
+/** The temporary card (mic, game prompt, fresh match) wins; then an update waiting for an
+ *  answer; else the pinned last match. */
 function shownCard(): { card: CardViewState | null; pinned: boolean } {
+  if (currentCard === null && updateCardShown(update) && update) {
+    return { card: { kind: "update", status: update }, pinned: true };
+  }
   if (pinOn() && (currentCard === null || currentCard.kind === "match") && lastMatch) {
     return { card: lastMatch, pinned: true };
   }
@@ -615,6 +622,10 @@ async function boot(): Promise<void> {
       stats = s;
       if (pillOn()) render();
     }),
+    on("update://state", (st) => {
+      update = st;
+      render();
+    }),
     on("display://switched", (d) => {
       if (currentCard?.kind !== "ask") currentCard = { kind: "display", text: d.text, ok: d.ok };
       render();
@@ -661,6 +672,13 @@ async function boot(): Promise<void> {
     invoke("get_trash_status").catch(() => null),
     invoke("get_audio_devices").catch(() => null),
   ]);
+  // A dock created after the check (new monitor) still shows a waiting update.
+  invoke("update_status")
+    .then((st) => {
+      update ??= st;
+      render();
+    })
+    .catch(() => {});
   if (!audioFromEvent) audioDevices = audioInit ?? null;
   trashStatus = trashInit;
   settings ??= s;

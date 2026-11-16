@@ -22,7 +22,7 @@ describe("dock page subscriptions", () => {
   it("targets this window for tone/reveal and listens globally for items/settings/tray", async () => {
     document.body.innerHTML = '<div id="frame"><div id="dock"></div></div>';
     await import("./main");
-    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(17));
+    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(18));
     const opts = Object.fromEntries(listen.mock.calls.map((c) => [c[0] as string, c[2]]));
     const own = { target: { kind: "WebviewWindow", label: "dock-2" } };
     expect(opts["dock://tone"]).toEqual(own);
@@ -67,7 +67,7 @@ describe("media update during a reorder drag", () => {
 
   it("keeps the islands still until the drop, then shows the media", async () => {
     await import("./main");
-    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(17));
+    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(18));
     const settings = {
       schemaVersion: 1,
       dock: {
@@ -76,7 +76,7 @@ describe("media update during a reorder drag", () => {
         showClock: true, showMedia: true, alwaysVisible: false,
       },
       animations: { speed: 1, style: "spring", cardDurationMs: 4000, reduceMotion: false },
-      general: { launchAtStartup: true, hideWindowsTaskbar: true, language: "fr" },
+      general: { launchAtStartup: true, hideWindowsTaskbar: true, language: "fr", checkUpdates: true },
       search: { hotkey: "Alt+Space", projectRoots: [], wslDistro: "", clipboardHistory: true, webUrl: "", textColor: "" },
     };
     const item = (id: string) => ({
@@ -103,7 +103,7 @@ describe("game mode", () => {
 
   it("marks a non-game monitor and keeps magnification off there", async () => {
     await import("./main");
-    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(17));
+    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(18));
     const settings = {
       schemaVersion: 1,
       dock: {
@@ -112,7 +112,7 @@ describe("game mode", () => {
         showClock: false, showMedia: false, alwaysVisible: false,
       },
       animations: { speed: 1, style: "spring", cardDurationMs: 4000, reduceMotion: false },
-      general: { launchAtStartup: true, hideWindowsTaskbar: true, language: "fr" },
+      general: { launchAtStartup: true, hideWindowsTaskbar: true, language: "fr", checkUpdates: true },
       search: { hotkey: "Alt+Space", projectRoots: [], wslDistro: "", clipboardHistory: true, webUrl: "", textColor: "" },
     };
     handler("settings://changed")(settings);
@@ -142,7 +142,7 @@ describe("system pill", () => {
 
   it("shows the pill on a non-game monitor while the dock is hidden, and reports it", async () => {
     await import("./main");
-    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(17));
+    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(18));
     const settings = {
       schemaVersion: 1,
       dock: {
@@ -151,7 +151,7 @@ describe("system pill", () => {
         showClock: false, showMedia: false, alwaysVisible: false,
       },
       animations: { speed: 1, style: "spring", cardDurationMs: 4000, reduceMotion: false },
-      general: { launchAtStartup: true, hideWindowsTaskbar: true, language: "fr" },
+      general: { launchAtStartup: true, hideWindowsTaskbar: true, language: "fr", checkUpdates: true },
       search: { hotkey: "Alt+Space", projectRoots: [], wslDistro: "", clipboardHistory: true, webUrl: "", textColor: "" },
       gameMode: { enabled: true, include: [], exclude: [], powerPlan: true, monitorPill: true, pingTarget: "1.1.1.1" },
     };
@@ -185,7 +185,7 @@ describe("mic mute", () => {
 
   it("shows the red mic glyph and the « Micro coupé » / « Micro activé » card on change", async () => {
     await import("./main");
-    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(17));
+    await vi.waitFor(() => expect(listen).toHaveBeenCalledTimes(18));
     await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith("get_media", undefined));
     expect(document.querySelector(".sys-mic")).toBeNull();
     handler("audio://devices")({ outputs: [], micMuted: true });

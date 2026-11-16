@@ -12,7 +12,7 @@ export const baseSettings: Settings = {
     alwaysVisible: false,
   },
   animations: { speed: 1, style: "spring", cardDurationMs: 4000, reduceMotion: false },
-  general: { launchAtStartup: true, hideWindowsTaskbar: true, language: "fr" },
+  general: { launchAtStartup: true, hideWindowsTaskbar: true, language: "fr", checkUpdates: true },
   search: {
     hotkey: "Alt+Space", projectRoots: [], wslDistro: "", clipboardHistory: true,
     webUrl: "https://www.google.com/search?q=%s", textColor: "",

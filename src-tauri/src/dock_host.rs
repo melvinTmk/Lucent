@@ -440,6 +440,15 @@ impl DockHost {
                     self.docks[i].page_ready = true;
                     if first {
                         self.report_ready(true);
+                        // « Toujours visible » shows a dock as soon as its window exists,
+                        // before its page listens: that `dock://reveal` was lost and the
+                        // page kept its content slid out under the glass. Repeat it.
+                        if matches!(self.docks[i].state, RevealState::Shown | RevealState::Disarming { .. }) {
+                            let label = self.docks[i].label.as_str();
+                            if let Err(e) = self.app.emit_to(label, "dock://reveal", RevealPayload { shown: true }) {
+                                eprintln!("lucent: cannot emit dock://reveal to {label}: {e}");
+                            }
+                        }
                     }
                     let d = &mut self.docks[i];
                     if !first && d.layout.w == layout.w && d.layout.h == layout.h {
